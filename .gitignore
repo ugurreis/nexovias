@@ -1,0 +1,8 @@
+.netlify/
+*.docx
+*.url
+*.txt
+.claude/
+node_modules/
+.env
+.env.local
