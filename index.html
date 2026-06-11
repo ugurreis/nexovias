@@ -936,7 +936,8 @@ function renderDrop(q) {
     : SEARCH_INDEX.slice(0, 6);
 
   if (!results.length) {
-    drop.innerHTML = `<div class="sr-empty">No results for "${q}"</div>`;
+    const esc = q.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    drop.innerHTML = `<div class="sr-empty">No results for "${esc}"</div>`;
     return;
   }
 
