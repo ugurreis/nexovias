@@ -271,7 +271,7 @@ select.inp { appearance: none; cursor: pointer; }
 
   <!-- STATS -->
   <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;">
-    <div class="stat"><div class="v" id="st-conn" style="color:var(--primary);">0/9</div><div class="l">Connected Platforms</div></div>
+    <div class="stat"><div class="v" id="st-conn" style="color:var(--primary);">0 / 15</div><div class="l">Connected Accounts</div></div>
     <div class="stat" style="border-left-color:var(--secondary);"><div class="v" id="st-sched" style="color:var(--secondary);">0</div><div class="l">Scheduled Posts</div></div>
     <div class="stat"><div class="v" id="st-pub" style="color:var(--green);">0</div><div class="l">Published</div></div>
     <div class="stat" style="border-left-color:var(--amber);"><div class="v" id="st-eng" style="color:var(--amber);">0%</div><div class="l">Avg. Engagement</div></div>
@@ -465,12 +465,38 @@ select.inp { appearance: none; cursor: pointer; }
 
   <!-- ============ ACCOUNTS ============ -->
   <section id="tab-accounts" role="tabpanel" aria-labelledby="accounts" style="display:none;">
-    <div style="margin-bottom:18px;">
-      <div class="slabel">Connected Accounts</div>
-      <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Connect your social accounts</h2>
-      <p class="muted" style="font-size:14px;margin-top:4px;">Toggle a platform on to use it in the composer. <span class="mono" style="font-size:12px;">(Demo — no real OAuth)</span></p>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
+      <div>
+        <div class="slabel">Connected Accounts</div>
+        <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Connect your social accounts</h2>
+        <p class="muted" style="font-size:14px;margin-top:4px;">Link several accounts — even more than one per platform. <span class="mono" style="font-size:12px;">(Demo — no real login)</span></p>
+      </div>
+      <button class="btn-p" style="padding:11px 18px;font-size:14px;" onclick="openConnect()"><span class="material-symbols-outlined" style="font-size:16px;">add_link</span>Connect account</button>
     </div>
-    <div id="accounts-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+
+    <!-- Usage meter: how many accounts connected vs plan limit -->
+    <div class="card" style="padding:22px;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+          <div style="font-size:15px;"><strong id="usage-count">0</strong> of <strong id="usage-limit">15</strong> accounts connected</div>
+          <div class="mono muted" id="usage-remaining" style="font-size:12px;margin-top:3px;"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="bg" id="usage-plan">Creator plan</span>
+          <button class="btn-o" style="padding:7px 14px;font-size:12px;" onclick="switchTab('pricing')">Upgrade</button>
+        </div>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden;">
+        <div id="usage-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--secondary),var(--primary));border-radius:6px;transition:width .4s;"></div>
+      </div>
+    </div>
+
+    <h3 style="font-weight:700;font-size:15px;margin-bottom:12px;">Your accounts</h3>
+    <div id="accounts-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:26px;"></div>
+
+    <h3 style="font-weight:700;font-size:15px;margin-bottom:6px;">Add from a platform</h3>
+    <p class="muted" style="font-size:13px;margin-bottom:12px;">PostVias supports 9 platforms. Click one to connect a new account on it.</p>
+    <div id="platforms-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
   </section>
 
   <!-- ============ PRICING ============ -->
@@ -515,6 +541,12 @@ select.inp { appearance: none; cursor: pointer; }
         <p class="muted" style="font-size:12px;margin-bottom:14px;">Pre-filled when you compose.</p>
         <label class="slabel" style="display:block;margin-bottom:6px;">Default time</label>
         <input id="set-time" type="time" class="inp" step="900" onchange="onSettingsInput()" aria-label="Default posting time"/>
+        <label class="slabel" style="display:block;margin:16px 0 6px;">Plan <span style="color:rgba(255,255,255,.3);text-transform:none;letter-spacing:0;">(sets your account limit)</span></label>
+        <select id="set-plan" class="inp" onchange="onPlanChange()" aria-label="Plan">
+          <option value="creator">Creator — up to 15 accounts</option>
+          <option value="growth">Growth — up to 50 accounts</option>
+          <option value="pro">Pro — unlimited accounts</option>
+        </select>
         <label class="slabel" style="display:block;margin:16px 0 8px;">Default platforms</label>
         <div id="set-defaults" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
       </div>
@@ -574,6 +606,27 @@ select.inp { appearance: none; cursor: pointer; }
   </div>
 </div>
 
+<!-- connect account modal -->
+<div class="ovl" id="connect-modal" role="dialog" aria-modal="true" aria-label="Connect account">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <h3 style="font-weight:700;font-size:18px;">Connect an account</h3>
+      <button class="iconbtn" style="border:none;" onclick="closeConnect()" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p class="muted" style="font-size:13px;margin-bottom:16px;">In the real app this opens a secure login (OAuth). For this demo, just pick a platform and enter a handle.</p>
+    <label class="slabel" style="display:block;margin-bottom:8px;">Platform</label>
+    <div id="connect-platforms" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+    <label class="slabel" style="display:block;margin-bottom:6px;">Display name</label>
+    <input id="connect-name" class="inp" placeholder="e.g. Your Brand" style="margin-bottom:14px;"/>
+    <label class="slabel" style="display:block;margin-bottom:6px;">Handle</label>
+    <div style="display:flex;align-items:center;gap:6px;"><span class="muted">@</span><input id="connect-handle" class="inp" placeholder="yourbrand"/></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
+      <button class="btn-g" style="padding:10px 18px;" onclick="closeConnect()">Cancel</button>
+      <button class="btn-p" style="padding:10px 18px;" onclick="doConnect()"><span class="material-symbols-outlined" style="font-size:16px;">add_link</span>Connect</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" role="status" aria-live="polite"><span class="material-symbols-outlined" style="color:var(--primary);font-size:18px;">check_circle</span><span id="toast-msg">Saved</span></div>
 
 <script>
@@ -615,9 +668,16 @@ const TEMPLATES = [
 ];
 
 let posts = [];
-let accounts = {};
+let accounts = [];            // connected accounts: [{ id, platform, handle, name }] — multiple per platform allowed
 let settings = {};
 let userTemplates = [];
+
+// Plan limits = how many accounts you can connect (matches the Pricing tab)
+const PLAN_LIMITS = { creator: 15, growth: 50, pro: Infinity };
+const PLAN_NAMES = { creator: 'Creator', growth: 'Growth', pro: 'Pro' };
+function planLimit() { return PLAN_LIMITS[settings.plan] ?? 15; }
+function isPlatformConnected(id) { return accounts.some(a => a.platform === id); }
+function accountsFor(id) { return accounts.filter(a => a.platform === id); }
 let selected = new Set();     // platforms selected in composer
 let variants = {};            // per-platform text overrides
 let customizing = false;
@@ -652,10 +712,20 @@ function seededRand(str) { let h = 2166136261; for (let i=0;i<str.length;i++){ h
 
 // ── seed ──────────────────────────────────────────────────
 function defaultSettings() {
-  return { brand:'Your Brand', handle:'yourbrand', defaultTime:'10:00', defaultPlatforms:['x','linkedin'] };
+  return { brand:'Your Brand', handle:'yourbrand', defaultTime:'10:00', defaultPlatforms:['x','linkedin'], plan:'creator' };
 }
 function seed() {
-  accounts = { x:true, linkedin:true, instagram:true, tiktok:true, facebook:true, youtube:false, threads:true, pinterest:false, bluesky:false };
+  // Connected accounts — note several platforms have more than one account.
+  accounts = [
+    { id:uid(), platform:'x',         handle:'yourbrand',        name:'Your Brand' },
+    { id:uid(), platform:'x',         handle:'yourbrand_news',   name:'Your Brand — News' },
+    { id:uid(), platform:'linkedin',  handle:'your-brand',       name:'Your Brand' },
+    { id:uid(), platform:'instagram', handle:'yourbrand',        name:'Your Brand' },
+    { id:uid(), platform:'instagram', handle:'yourbrand.studio', name:'Your Brand Studio' },
+    { id:uid(), platform:'tiktok',    handle:'yourbrand',        name:'Your Brand' },
+    { id:uid(), platform:'facebook',  handle:'YourBrandPage',    name:'Your Brand (Page)' },
+    { id:uid(), platform:'threads',   handle:'yourbrand',        name:'Your Brand' },
+  ];
   settings = defaultSettings();
   userTemplates = [];
   const now = new Date();
@@ -680,8 +750,9 @@ function load() {
   try { accounts = JSON.parse(localStorage.getItem('postvias_accounts')) || null; } catch(e){ accounts = null; }
   try { settings = JSON.parse(localStorage.getItem('postvias_settings')) || null; } catch(e){ settings = null; }
   try { userTemplates = JSON.parse(localStorage.getItem('postvias_templates')) || []; } catch(e){ userTemplates = []; }
-  if (!posts || !accounts) seed();
+  if (!posts || !Array.isArray(accounts)) seed();   // re-seed if missing or old (object) format
   if (!settings) { settings = defaultSettings(); save(); }
+  if (!settings.plan) settings.plan = 'creator';
 }
 
 // ── engagement model (deterministic, demo) ────────────────
@@ -701,8 +772,8 @@ function engagementOf(p) {
 
 // ── stats ─────────────────────────────────────────────────
 function renderStats() {
-  const conn = Object.values(accounts).filter(Boolean).length;
-  document.getElementById('st-conn').textContent = conn + '/9';
+  const lim = planLimit();
+  document.getElementById('st-conn').textContent = accounts.length + ' / ' + (lim === Infinity ? '∞' : lim);
   document.getElementById('st-sched').textContent = posts.filter(p => p.status==='scheduled').length;
   const pub = posts.filter(p => p.status==='published');
   document.getElementById('st-pub').textContent = pub.length;
@@ -734,7 +805,7 @@ function renderComposePlatforms() {
   const box = document.getElementById('cmp-platforms');
   box.innerHTML = '';
   PLATFORMS.forEach(p => {
-    const connected = !!accounts[p.id];
+    const connected = isPlatformConnected(p.id);
     const chip = document.createElement('div');
     chip.className = 'pchip' + (selected.has(p.id) ? ' sel' : '') + (connected ? '' : ' off');
     chip.setAttribute('role', 'button');
@@ -958,7 +1029,7 @@ function resetComposer() {
   setSchedDate('');
   document.getElementById('cmp-time').value = settings.defaultTime || '';
   document.getElementById('cmp-editing').value = '';
-  selected = new Set((settings.defaultPlatforms || []).filter(id => accounts[id]));
+  selected = new Set((settings.defaultPlatforms || []).filter(id => isPlatformConnected(id)));
   variants = {}; customizing = false;
   document.getElementById('cmp-custom-chk').classList.remove('on');
   document.getElementById('cmp-variants').style.display = 'none';
@@ -1061,7 +1132,7 @@ function composeAt(date, time) {
   resetComposer();
   setSchedDate(date);
   document.getElementById('cmp-time').value = time;
-  PLATFORMS.forEach(p => { if (accounts[p.id]) selected.add(p.id); });
+  PLATFORMS.forEach(p => { if (isPlatformConnected(p.id)) selected.add(p.id); });
   switchTab('compose');
   renderComposePlatforms(); onComposeInput();
 }
@@ -1384,30 +1455,106 @@ function renderPricing() {
 function startTrial(plan) { toast(plan + ' — 7-day free trial started (demo)'); }
 
 // ── accounts ──────────────────────────────────────────────
+function renderUsage() {
+  const lim = planLimit();
+  const limTxt = lim === Infinity ? '∞' : lim;
+  const remaining = lim === Infinity ? '∞' : Math.max(0, lim - accounts.length);
+  const pct = lim === Infinity ? Math.min(100, accounts.length * 4) : Math.min(100, Math.round(accounts.length / lim * 100));
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('usage-count', accounts.length);
+  set('usage-limit', limTxt);
+  set('usage-plan', (PLAN_NAMES[settings.plan] || 'Creator') + ' plan');
+  document.getElementById('usage-remaining').textContent = remaining + ' account' + (remaining === 1 ? '' : 's') + ' remaining';
+  const bar = document.getElementById('usage-bar');
+  if (bar) { bar.style.width = pct + '%'; bar.style.background = (lim !== Infinity && accounts.length >= lim) ? 'var(--amber)' : 'linear-gradient(90deg,var(--secondary),var(--primary))'; }
+}
 function renderAccounts() {
+  renderUsage();
+  // Connected accounts (grouped visually by listing each account row)
   const box = document.getElementById('accounts-list');
   box.innerHTML = '';
-  PLATFORMS.forEach(p => {
-    const on = !!accounts[p.id];
-    const row = document.createElement('div');
-    row.className = 'arow';
-    const count = posts.filter(x=>x.platforms.includes(p.id)).length;
-    row.innerHTML =
-      `<div class="pi-lg" style="width:40px;height:40px;border-radius:10px;font-size:15px;background:${p.color}">${esc(p.abbr)}</div>
-       <div style="flex:1;">
-         <div style="font-weight:600;font-size:15px;">${esc(p.name)}</div>
-         <div class="mono" style="font-size:11px;color:${on?'var(--primary)':'var(--text-dim)'};">${on?('Connected · '+count+' posts'):'Not connected'}</div>
-       </div>
-       <button class="toggle ${on?'on':''}" onclick="toggleAccount('${p.id}')" role="switch" aria-checked="${on}" aria-label="Toggle ${esc(p.name)}"><span class="knob"></span></button>`;
-    box.appendChild(row);
-  });
-  if (window.PVanim) window.PVanim.stagger(box.children);
+  if (!accounts.length) {
+    box.innerHTML = `<div class="empty" style="grid-column:1/-1;"><span class="material-symbols-outlined">link_off</span><div style="font-size:15px;">No accounts connected yet</div><div style="font-size:13px;margin-top:4px;">Click <strong>Connect account</strong> to add one.</div></div>`;
+  } else {
+    accounts.forEach(a => {
+      const p = pById(a.platform); if (!p) return;
+      const postCount = posts.filter(x => x.platforms.includes(a.platform)).length;
+      const row = document.createElement('div');
+      row.className = 'arow';
+      row.innerHTML =
+        `<div class="pi-lg" style="width:40px;height:40px;border-radius:10px;font-size:15px;background:${p.color}">${esc(p.abbr)}</div>
+         <div style="flex:1;min-width:0;">
+           <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(a.name || a.handle)}</div>
+           <div class="mono" style="font-size:11px;color:var(--text-dim);">@${esc(a.handle)} · ${esc(p.name)}</div>
+         </div>
+         <button class="btn-g btn-danger" style="padding:7px 12px;font-size:12px;" onclick="disconnectAccount('${a.id}')"><span class="material-symbols-outlined" style="font-size:14px;">link_off</span>Disconnect</button>`;
+      box.appendChild(row);
+    });
+    if (window.PVanim) window.PVanim.stagger(box.children);
+  }
+  // Available platforms to add a new account from
+  const pl = document.getElementById('platforms-list');
+  if (pl) {
+    pl.innerHTML = '';
+    PLATFORMS.forEach(p => {
+      const n = accountsFor(p.id).length;
+      const chip = document.createElement('button');
+      chip.className = 'pchip' + (n ? ' sel' : '');
+      chip.innerHTML = `<span class="pi" style="background:${p.color}">${esc(p.abbr)}</span>${esc(p.name)}${n ? ` <span class="mono" style="opacity:.7;">·${n}</span>` : ''}`;
+      chip.title = 'Connect a new ' + p.name + ' account';
+      chip.onclick = () => openConnect(p.id);
+      pl.appendChild(chip);
+    });
+  }
 }
-function toggleAccount(id) {
-  accounts[id] = !accounts[id];
-  if (!accounts[id]) selected.delete(id);
-  save(); renderStats(); renderAccounts();
-  toast(accounts[id] ? pById(id).name + ' connected' : pById(id).name + ' disconnected');
+
+// ── connect / disconnect accounts ─────────────────────────
+let connectPlatform = null;
+function openConnect(preset) {
+  connectPlatform = preset || null;
+  if (accounts.length >= planLimit()) {
+    toast('Account limit reached on your ' + (PLAN_NAMES[settings.plan] || 'Creator') + ' plan — upgrade for more', true);
+    switchTab('pricing'); return;
+  }
+  document.getElementById('connect-name').value = '';
+  document.getElementById('connect-handle').value = '';
+  const box = document.getElementById('connect-platforms');
+  box.innerHTML = '';
+  PLATFORMS.forEach(p => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'pchip' + (connectPlatform === p.id ? ' sel' : '');
+    chip.innerHTML = `<span class="pi" style="background:${p.color}">${esc(p.abbr)}</span>${esc(p.name)}`;
+    chip.onclick = () => { connectPlatform = p.id; [...box.children].forEach(c => c.classList.remove('sel')); chip.classList.add('sel'); };
+    box.appendChild(chip);
+  });
+  lastFocus = document.activeElement;
+  const modal = document.getElementById('connect-modal');
+  modal.classList.add('open');
+  if (window.PVanim) window.PVanim.modalIn(modal.querySelector('.modal'));
+  setTimeout(() => document.getElementById('connect-name').focus(), 0);
+}
+function closeConnect() { document.getElementById('connect-modal').classList.remove('open'); restoreFocus(); }
+function doConnect() {
+  if (!connectPlatform) { toast('Pick a platform first', true); return; }
+  if (accounts.length >= planLimit()) { toast('Account limit reached — upgrade your plan', true); switchTab('pricing'); return; }
+  const handle = document.getElementById('connect-handle').value.trim().replace(/^@/, '');
+  const name = document.getElementById('connect-name').value.trim();
+  if (!handle) { toast('Enter a handle', true); return; }
+  accounts.push({ id: uid(), platform: connectPlatform, handle, name: name || handle });
+  save(); renderStats();
+  closeConnect();
+  switchTab('accounts');
+  toast(pById(connectPlatform).name + ' account @' + handle + ' connected');
+}
+function disconnectAccount(id) {
+  const a = accounts.find(x => x.id === id); if (!a) return;
+  showConfirm('Disconnect this account?', '@' + a.handle + ' (' + pById(a.platform).name + ') will be removed. You can reconnect anytime.', () => {
+    accounts = accounts.filter(x => x.id !== id);
+    if (!isPlatformConnected(a.platform)) selected.delete(a.platform);   // drop from composer if no accounts left
+    save(); renderStats(); renderAccounts();
+    toast('Account disconnected');
+  });
 }
 
 // ── settings ──────────────────────────────────────────────
@@ -1415,6 +1562,7 @@ function renderSettings() {
   document.getElementById('set-brand').value = settings.brand || '';
   document.getElementById('set-handle').value = settings.handle || '';
   document.getElementById('set-time').value = settings.defaultTime || '10:00';
+  document.getElementById('set-plan').value = settings.plan || 'creator';
   const box = document.getElementById('set-defaults');
   box.innerHTML = '';
   PLATFORMS.forEach(p => {
@@ -1437,6 +1585,11 @@ function onSettingsInput() {
   settings.handle = document.getElementById('set-handle').value.replace(/^@/,'');
   settings.defaultTime = document.getElementById('set-time').value;
   save();
+}
+function onPlanChange() {
+  settings.plan = document.getElementById('set-plan').value;
+  save(); renderStats();
+  toast('Switched to ' + (PLAN_NAMES[settings.plan] || 'Creator') + ' plan');
 }
 function exportData() {
   const blob = new Blob([JSON.stringify({ posts, accounts, settings, userTemplates }, null, 2)], { type:'application/json' });
@@ -1524,8 +1677,9 @@ function toast(msg, isErr) {
 // ── overlay / keyboard handling ───────────────────────────
 document.getElementById('post-modal').addEventListener('click', e => { if (e.target.id==='post-modal') closeModal(); });
 document.getElementById('confirm-modal').addEventListener('click', e => { if (e.target.id==='confirm-modal') closeConfirm(); });
+document.getElementById('connect-modal').addEventListener('click', e => { if (e.target.id==='connect-modal') closeConnect(); });
 document.addEventListener('keydown', e => {
-  if (e.key==='Escape') { closeModal(); closeConfirm(); const cc=document.getElementById('cmp-cal'); if (cc) cc.style.display='none'; return; }
+  if (e.key==='Escape') { closeModal(); closeConfirm(); closeConnect(); const cc=document.getElementById('cmp-cal'); if (cc) cc.style.display='none'; return; }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
   if (typing) return;
   if (e.key==='/') { e.preventDefault(); switchTab('content'); setTimeout(()=>document.getElementById('content-search').focus(),0); return; }
