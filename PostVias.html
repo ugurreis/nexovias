@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PostVias — Post to all your social accounts from one dashboard</title>
+<meta name="description" content="PostVias — schedule and cross-post to 9 social platforms from one dashboard. A Nexovias module."/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Geist:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --primary: #00FFC2;
+  --secondary: #00D1FF;
+  --bg: #000000;
+  --card: #080808;
+  --border: rgba(255,255,255,0.07);
+  --border-active: rgba(0,255,194,0.35);
+  --text: #FFFFFF;
+  --text-dim: rgba(255,255,255,0.55);
+  --amber: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Hanken Grotesk', sans-serif; overflow-x: hidden; min-height: 100vh; }
+h1,h2,h3,h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+.mono { font-family: 'Geist', monospace; }
+.dot-bg { background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 24px 24px; }
+a { color: inherit; }
+
+/* Accessibility: visible focus ring for keyboard users */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+.skip-link { position: absolute; left: -999px; top: 8px; z-index: 300; background: var(--primary); color: #000; padding: 10px 16px; border-radius: 6px; font-weight: 700; }
+.skip-link:focus { left: 12px; }
+
+/* Buttons */
+.btn-p { background: var(--primary); color: #000; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; transition: all .25s; display: inline-flex; align-items: center; gap: 8px; font-family: 'Hanken Grotesk', sans-serif; }
+.btn-p:hover { background: #36ffc4; box-shadow: 0 0 28px rgba(0,255,194,.38); transform: translateY(-1px); }
+.btn-p:disabled { background: rgba(255,255,255,.12); color: rgba(255,255,255,.4); cursor: not-allowed; box-shadow: none; transform: none; }
+.btn-o { background: transparent; color: var(--primary); border: 1px solid var(--primary); font-weight: 600; border-radius: 6px; cursor: pointer; transition: all .25s; display: inline-flex; align-items: center; gap: 6px; font-family: 'Hanken Grotesk', sans-serif; }
+.btn-o:hover { background: rgba(0,255,194,.08); box-shadow: 0 0 18px rgba(0,255,194,.18); }
+.btn-g { background: transparent; color: var(--text-dim); border: 1px solid var(--border); font-weight: 600; border-radius: 6px; cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; font-family: 'Hanken Grotesk', sans-serif; }
+.btn-g:hover { color: #fff; border-color: rgba(255,255,255,.25); }
+.btn-danger { color: var(--red); border-color: rgba(239,68,68,.3); }
+.btn-danger:hover { background: rgba(239,68,68,.08); border-color: var(--red); }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; transition: all .3s; }
+.card:hover { border-color: var(--border-active); }
+
+/* Inputs */
+.inp { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-family: 'Hanken Grotesk', sans-serif; font-size: 15px; padding: 12px 14px; width: 100%; transition: all .3s; }
+.inp:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,255,194,.1); }
+.inp::placeholder { color: rgba(255,255,255,.28); }
+textarea.inp { resize: vertical; min-height: 130px; line-height: 1.6; }
+select.inp { appearance: none; cursor: pointer; }
+
+.slabel { font-family: 'Geist', monospace; font-size: 11px; font-weight: 500; letter-spacing: .15em; text-transform: uppercase; color: var(--primary); }
+.div { border: none; border-top: 1px solid rgba(255,255,255,.05); }
+.muted { color: var(--text-dim); }
+
+/* Badges */
+.bg { background: rgba(0,255,194,.1); color: var(--primary); border: 1px solid rgba(0,255,194,.3); border-radius: 20px; font-family: 'Geist', monospace; font-size: 11px; padding: 3px 10px; }
+.bw { background: rgba(245,158,11,.14); color: var(--amber); border: 1px solid rgba(245,158,11,.3); border-radius: 20px; font-family: 'Geist', monospace; font-size: 11px; padding: 3px 10px; }
+.bc { background: rgba(0,209,255,.12); color: var(--secondary); border: 1px solid rgba(0,209,255,.3); border-radius: 20px; font-family: 'Geist', monospace; font-size: 11px; padding: 3px 10px; }
+.bdim { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; font-family: 'Geist', monospace; font-size: 11px; padding: 3px 10px; }
+
+/* Aurora bg */
+.a1 { position: fixed; top: -20%; right: -10%; width: 70vw; height: 70vh; background: radial-gradient(circle, rgba(0,255,194,.10) 0%, transparent 70%); filter: blur(80px); pointer-events: none; z-index: 0; }
+.a2 { position: fixed; bottom: -20%; left: -10%; width: 60vw; height: 60vh; background: radial-gradient(circle, rgba(0,209,255,.06) 0%, transparent 70%); filter: blur(100px); pointer-events: none; z-index: 0; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: rgba(0,255,194,.3); border-radius: 3px; }
+
+/* Top bar */
+.topbar { position: sticky; top: 0; z-index: 50; background: rgba(0,0,0,.82); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,.06); }
+.tabbtn { font-family: 'Geist', monospace; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; padding: 8px 14px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-dim); cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.tabbtn:hover { color: #fff; }
+.tabbtn[aria-selected="true"] { color: var(--primary); background: rgba(0,255,194,.08); border-color: rgba(0,255,194,.25); }
+.tabbtn .material-symbols-outlined { font-size: 16px; }
+.iconbtn { width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; }
+.iconbtn:hover { color: var(--primary); border-color: var(--border-active); }
+
+/* Stat card */
+.stat { background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 10px; padding: 18px 20px; }
+.stat .v { font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 28px; }
+.stat .l { font-family: 'Geist', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); margin-top: 4px; }
+.stat .delta { font-size: 12px; font-weight: 600; margin-top: 6px; }
+
+/* Platform chip */
+.pchip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,.03); cursor: pointer; transition: all .2s; font-size: 13px; font-weight: 600; user-select: none; }
+.pchip:hover { border-color: rgba(255,255,255,.2); }
+.pchip.sel { border-color: var(--primary); background: rgba(0,255,194,.1); color: var(--primary); }
+.pchip.off { opacity: .35; cursor: not-allowed; }
+.pchip .pi { width: 20px; height: 20px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
+
+/* filter tabs */
+.ftab { font-family: 'Geist', monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 6px 16px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; transition: all .2s; }
+.ftab:hover, .ftab.active { border-color: var(--primary); color: var(--primary); background: rgba(0,255,194,.08); }
+
+/* preview card */
+.prev { background: #0d0d0d; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.prev-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.prev-av { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+.prev-text { font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; color: #e9e9e9; }
+.prev-media { margin-top: 12px; border-radius: 10px; width: 100%; max-height: 240px; object-fit: cover; border: 1px solid var(--border); }
+
+/* content row */
+.crow { display: flex; gap: 14px; align-items: flex-start; padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); transition: all .2s; }
+.crow:hover { border-color: var(--border-active); }
+.crow.sel { border-color: var(--primary); box-shadow: 0 0 0 1px rgba(0,255,194,.3); }
+
+/* calendar */
+.calgrid { display: grid; grid-template-columns: 56px repeat(7, 1fr); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); }
+.calhead { padding: 10px 6px; text-align: center; border-bottom: 1px solid var(--border); border-left: 1px solid rgba(255,255,255,.04); font-size: 12px; }
+.calhead.today { background: rgba(0,255,194,.06); }
+.calcell { min-height: 64px; border-bottom: 1px solid rgba(255,255,255,.04); border-left: 1px solid rgba(255,255,255,.04); padding: 4px; cursor: pointer; transition: background .15s; position: relative; }
+.calcell:hover { background: rgba(0,255,194,.05); }
+.calcell.today { background: rgba(0,255,194,.025); }
+.caltime { font-family: 'Geist', monospace; font-size: 10px; color: rgba(255,255,255,.35); text-align: right; padding: 6px 8px 0 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.calpost { font-size: 10px; padding: 3px 6px; border-radius: 5px; margin-bottom: 3px; cursor: grab; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; border-left: 2px solid; }
+.calpost:active { cursor: grabbing; }
+.calpost.dragging { opacity: .4; }
+.calcell.dragover { background: rgba(0,255,194,.14) !important; outline: 1px dashed var(--primary); outline-offset: -2px; }
+
+/* media upload dropzone */
+.dropzone { border: 1px dashed rgba(255,255,255,.18); border-radius: 10px; padding: 22px 16px; text-align: center; cursor: pointer; transition: all .2s; background: rgba(255,255,255,.02); }
+.dropzone:hover, .dropzone:focus-visible { border-color: var(--border-active); background: rgba(0,255,194,.04); }
+.dropzone.drag { border-color: var(--primary); background: rgba(0,255,194,.08); box-shadow: 0 0 0 3px rgba(0,255,194,.1); }
+#cmp-media-preview img, #cmp-media-preview video { width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; display: block; }
+.media-remove { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(0,0,0,.7); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.media-remove:hover { background: var(--red); }
+/* compose inline calendar */
+.cc-cell { min-height: 30px; border-bottom: 1px solid rgba(255,255,255,.04); border-left: 1px solid rgba(255,255,255,.04); cursor: pointer; transition: background .12s; display: flex; align-items: center; justify-content: center; }
+.cc-cell:hover { background: rgba(0,255,194,.08); }
+.cc-cell.picked { background: rgba(0,255,194,.18); box-shadow: inset 0 0 0 1px var(--primary); }
+.cc-cell.has { background: rgba(0,209,255,.08); }
+.cc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--secondary); }
+
+/* account row */
+.arow { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+
+/* toggle */
+.toggle { width: 44px; height: 24px; border-radius: 20px; background: rgba(255,255,255,.12); position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0; border: none; }
+.toggle.on { background: var(--primary); }
+.toggle .knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; }
+.toggle.on .knob { left: 23px; }
+
+/* checkbox */
+.chk { width: 20px; height: 20px; border-radius: 5px; border: 1px solid var(--border); background: rgba(255,255,255,.03); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+.chk.on { background: var(--primary); border-color: var(--primary); }
+.chk .material-symbols-outlined { font-size: 15px; color: #000; opacity: 0; }
+.chk.on .material-symbols-outlined { opacity: 1; }
+
+/* template card */
+.tmpl { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all .2s; display: flex; flex-direction: column; gap: 8px; }
+.tmpl:hover { border-color: var(--border-active); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,255,194,.06); }
+.tmpl .tcat { font-family: 'Geist', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--secondary); }
+.tmpl .tbody { font-size: 13px; line-height: 1.5; color: #e0e0e0; }
+
+/* chip-tag (hashtags/emoji) */
+.tag { display: inline-block; padding: 5px 11px; border-radius: 16px; border: 1px solid var(--border); background: rgba(255,255,255,.03); cursor: pointer; font-size: 12px; transition: all .15s; font-family: 'Geist', monospace; }
+.tag:hover { border-color: var(--primary); color: var(--primary); background: rgba(0,255,194,.08); }
+
+/* analytics chart card */
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.chart-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.heat-cell { border-radius: 4px; aspect-ratio: 1.6; display: flex; align-items: center; justify-content: center; font-size: 9px; color: rgba(255,255,255,.5); }
+
+/* skeleton loader */
+.skel { background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 37%, rgba(255,255,255,.04) 63%); background-size: 400% 100%; animation: shimmer 1.3s ease infinite; border-radius: 8px; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+/* settings row */
+.srow { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.srow:last-child { border-bottom: none; }
+.srow .sk { font-weight: 600; font-size: 14px; }
+.srow .sd { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+/* pricing */
+.billtoggle { display: inline-flex; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 30px; padding: 4px; gap: 4px; }
+.billbtn { font-family: 'Hanken Grotesk', sans-serif; font-size: 14px; font-weight: 600; padding: 9px 22px; border-radius: 26px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 8px; }
+.billbtn.active { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(0,255,194,.3); }
+.save-badge { font-family: 'Geist', monospace; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: rgba(0,255,194,.15); color: var(--primary); }
+.billbtn.active .save-badge { background: rgba(0,0,0,.22); color: #003a2c; }
+.plan { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; display: flex; flex-direction: column; transition: all .3s; position: relative; overflow: hidden; }
+.plan:hover { border-color: var(--border-active); }
+.plan.featured { border-color: rgba(0,255,194,.4); box-shadow: 0 0 40px rgba(0,255,194,.08); }
+.plan.featured::before { content: ''; position: absolute; top: 0; right: 0; width: 160px; height: 160px; background: radial-gradient(circle at top right, rgba(0,255,194,.14), transparent 70%); pointer-events: none; }
+.plan-badge { font-family: 'Geist', monospace; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px; border-radius: 14px; background: rgba(0,255,194,.14); color: var(--primary); border: 1px solid rgba(0,255,194,.3); }
+.plan-feat { display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; color: #d8d8d8; margin-bottom: 11px; line-height: 1.45; }
+.plan-feat .material-symbols-outlined { font-size: 17px; color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+.plan-feat.bold { color: #fff; font-weight: 600; }
+
+/* empty state */
+.empty { text-align: center; padding: 48px 20px; color: var(--text-dim); }
+.empty .material-symbols-outlined { font-size: 42px; color: rgba(255,255,255,.18); margin-bottom: 10px; }
+
+/* kbd */
+.kbd { font-family: 'Geist', monospace; font-size: 11px; background: rgba(255,255,255,.06); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; color: var(--text-dim); }
+
+/* modal */
+.ovl { position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+.ovl.open { display: flex; }
+.modal { background: #0b0b0b; border: 1px solid var(--border-active); border-radius: 14px; padding: 26px; width: 100%; max-width: 480px; box-shadow: 0 24px 60px rgba(0,0,0,.6); max-height: 88vh; overflow-y: auto; }
+
+/* toast */
+#toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); background: #0d0d0d; border: 1px solid var(--border-active); border-radius: 10px; padding: 14px 22px; z-index: 200; display: flex; align-items: center; gap: 10px; box-shadow: 0 16px 40px rgba(0,0,0,.5); transition: transform .35s cubic-bezier(.2,.9,.3,1.2); font-size: 14px; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+.fi { opacity: 0; transform: translateY(14px); animation: fadein .5s ease forwards; }
+@keyframes fadein { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .fi { animation: none; opacity: 1; transform: none; }
+  .skel { animation: none; }
+  #toast { transition: none; }
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+.pi-lg { width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+
+@media (max-width: 920px) {
+  .composer-grid { grid-template-columns: 1fr !important; }
+  .stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+  .analytics-2 { grid-template-columns: 1fr !important; }
+  #pricing-grid { grid-template-columns: 1fr !important; }
+  .tabs-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .calgrid { font-size: 10px; }
+  .hide-sm { display: none !important; }
+}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to content</a>
+<div class="a1"></div>
+<div class="a2"></div>
+<div class="dot-bg" style="position:fixed;inset:0;opacity:.3;pointer-events:none;z-index:0;"></div>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;height:66px;gap:14px;">
+    <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
+      <a href="index.html" style="display:flex;align-items:center;gap:8px;text-decoration:none;" aria-label="PostVias home">
+        <span class="material-symbols-outlined" style="color:var(--primary);font-variation-settings:'FILL' 1;font-size:22px;">hub</span>
+        <span style="font-family:'Plus Jakarta Sans';font-weight:700;font-size:19px;color:var(--primary);">PostVias</span>
+      </a>
+      <a href="index.html" class="mono hide-sm" style="font-size:12px;color:var(--text-dim);text-decoration:none;display:inline-flex;align-items:center;gap:4px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.55)'">
+        <span class="material-symbols-outlined" style="font-size:14px;">arrow_back</span> Nexovias
+      </a>
+    </div>
+    <nav class="tabs-scroll" role="tablist" aria-label="Sections" style="display:flex;gap:5px;">
+      <button class="tabbtn" role="tab" aria-selected="true" aria-controls="tab-compose" data-tab="compose" onclick="switchTab('compose')"><span class="material-symbols-outlined">edit_square</span>Compose</button>
+      <button class="tabbtn" role="tab" aria-selected="false" aria-controls="tab-calendar" data-tab="calendar" onclick="switchTab('calendar')"><span class="material-symbols-outlined">calendar_month</span>Calendar</button>
+      <button class="tabbtn" role="tab" aria-selected="false" aria-controls="tab-content" data-tab="content" onclick="switchTab('content')"><span class="material-symbols-outlined">grid_view</span>Content</button>
+      <button class="tabbtn" role="tab" aria-selected="false" aria-controls="tab-analytics" data-tab="analytics" onclick="switchTab('analytics')"><span class="material-symbols-outlined">monitoring</span>Analytics</button>
+      <button class="tabbtn hide-sm" role="tab" aria-selected="false" aria-controls="tab-studio" data-tab="studio" onclick="switchTab('studio')"><span class="material-symbols-outlined">auto_awesome</span>Studio</button>
+      <button class="tabbtn hide-sm" role="tab" aria-selected="false" aria-controls="tab-accounts" data-tab="accounts" onclick="switchTab('accounts')"><span class="material-symbols-outlined">group</span>Accounts</button>
+      <button class="tabbtn" role="tab" aria-selected="false" aria-controls="tab-pricing" data-tab="pricing" onclick="switchTab('pricing')"><span class="material-symbols-outlined">sell</span>Pricing</button>
+    </nav>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <button class="iconbtn" onclick="switchTab('settings')" aria-label="Settings"><span class="material-symbols-outlined" style="font-size:18px;">settings</span></button>
+      <button class="btn-p" style="padding:9px 16px;font-size:13px;" onclick="newPost()"><span class="material-symbols-outlined" style="font-size:16px;">add</span><span class="hide-sm">New Post</span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap" style="padding-top:28px;padding-bottom:90px;">
+
+  <!-- STATS -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;">
+    <div class="stat"><div class="v" id="st-conn" style="color:var(--primary);">0/9</div><div class="l">Connected Platforms</div></div>
+    <div class="stat" style="border-left-color:var(--secondary);"><div class="v" id="st-sched" style="color:var(--secondary);">0</div><div class="l">Scheduled Posts</div></div>
+    <div class="stat"><div class="v" id="st-pub" style="color:var(--green);">0</div><div class="l">Published</div></div>
+    <div class="stat" style="border-left-color:var(--amber);"><div class="v" id="st-eng" style="color:var(--amber);">0%</div><div class="l">Avg. Engagement</div></div>
+  </div>
+
+  <!-- ============ COMPOSE ============ -->
+  <section id="tab-compose" role="tabpanel" aria-labelledby="compose">
+    <div style="margin-bottom:18px;">
+      <div class="slabel">Cross-Posting</div>
+      <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Post to all platforms <span style="color:var(--primary);">instantly</span></h2>
+      <p class="muted" style="font-size:14px;margin-top:4px;">Write once, publish everywhere. Select platforms, preview, then post now or schedule.</p>
+    </div>
+
+    <div class="composer-grid" style="display:grid;grid-template-columns:1fr 380px;gap:20px;">
+      <div class="card" style="padding:22px;">
+        <!-- MEDIA (now above the post text) -->
+        <label class="slabel" style="display:block;margin-bottom:10px;">Media <span style="color:rgba(255,255,255,.3);text-transform:none;letter-spacing:0;">(optional — image or video)</span></label>
+        <div id="cmp-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload image or video"
+             onclick="document.getElementById('cmp-file').click()"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('cmp-file').click();}"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="onFileDrop(event)">
+          <input type="file" id="cmp-file" accept="image/*,video/*" style="display:none;" onchange="onFilePick(event)"/>
+          <div id="cmp-media-empty" style="display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;">
+            <span class="material-symbols-outlined" style="font-size:30px;color:var(--primary);">cloud_upload</span>
+            <div style="font-size:13px;color:#e0e0e0;">Click to upload or drag &amp; drop</div>
+            <div class="mono" style="font-size:11px;color:var(--text-dim);">PNG · JPG · GIF · MP4 — up to 8&nbsp;MB</div>
+          </div>
+          <div id="cmp-media-preview" style="display:none;"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input id="cmp-media" class="inp" placeholder="…or paste an image / video URL" oninput="onMediaUrl()" aria-label="Media URL"/>
+          <button class="btn-g" style="padding:0 14px;white-space:nowrap;" onclick="useSampleImg()">Sample</button>
+        </div>
+
+        <hr class="div" style="margin:22px 0;">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <label class="slabel" for="cmp-text">Your Post</label>
+          <button class="btn-g" style="padding:5px 10px;font-size:12px;" onclick="switchTab('studio')" title="Browse templates"><span class="material-symbols-outlined" style="font-size:14px;">auto_awesome</span>Templates</button>
+        </div>
+        <textarea id="cmp-text" class="inp" placeholder="What do you want to share today?" oninput="onComposeInput()"></textarea>
+
+        <!-- quick insert: emoji + hashtag groups -->
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;" id="cmp-quick"></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+          <span id="cmp-count" class="mono" style="font-size:12px;color:var(--text-dim);">0 characters · 0 hashtags</span>
+          <span id="cmp-limit" class="mono" style="font-size:12px;color:var(--amber);"></span>
+        </div>
+
+        <label class="slabel" style="display:block;margin:20px 0 10px;">Platforms</label>
+        <div id="cmp-platforms" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+
+        <!-- per-platform customization -->
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+          <button class="chk" id="cmp-custom-chk" onclick="toggleCustomize()" aria-label="Customize per platform"><span class="material-symbols-outlined">check</span></button>
+          <span style="font-size:13px;">Customize text per platform</span>
+        </div>
+        <div id="cmp-variants" style="display:none;margin-top:12px;"></div>
+
+        <hr class="div" style="margin:22px 0;">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <label class="slabel">Schedule <span style="color:rgba(255,255,255,.3);text-transform:none;letter-spacing:0;">(empty = post now)</span></label>
+          <button class="btn-g" style="padding:5px 10px;font-size:12px;" onclick="suggestBestTime()" title="Pick the next high-engagement slot"><span class="material-symbols-outlined" style="font-size:14px;">bolt</span>Best time</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <input id="cmp-date" type="text" readonly class="inp" style="flex:1;min-width:150px;cursor:pointer;" placeholder="Pick a date on the calendar" onclick="toggleComposeCal()" aria-label="Schedule date — opens calendar"/>
+          <input id="cmp-time" type="time" class="inp" style="flex:1;min-width:120px;" step="900" aria-label="Schedule time" onchange="syncComposeCal()"/>
+        </div>
+        <!-- inline calendar picker -->
+        <div id="cmp-cal" style="display:none;margin-top:12px;border:1px solid var(--border-active);border-radius:12px;padding:14px;background:rgba(0,255,194,.02);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <button class="btn-g" style="padding:6px 10px;" onclick="composeCalNav(-1)" aria-label="Previous week"><span class="material-symbols-outlined" style="font-size:15px;">chevron_left</span></button>
+            <span id="cmp-cal-title" class="mono" style="font-size:12px;color:var(--primary);"></span>
+            <button class="btn-g" style="padding:6px 10px;" onclick="composeCalNav(1)" aria-label="Next week"><span class="material-symbols-outlined" style="font-size:15px;">chevron_right</span></button>
+          </div>
+          <div id="cmp-cal-grid"></div>
+          <p class="mono muted" style="font-size:11px;margin-top:8px;">Click a slot to schedule there. Time can be fine-tuned above.</p>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;">
+          <button id="cmp-primary" class="btn-p" style="padding:11px 20px;font-size:14px;flex:1;justify-content:center;" onclick="submitPost()"><span class="material-symbols-outlined" style="font-size:16px;">send</span>Post Now</button>
+          <button class="btn-o" style="padding:11px 16px;font-size:14px;" onclick="submitPost('draft')">Save Draft</button>
+          <button class="btn-g" style="padding:11px 14px;font-size:14px;" onclick="saveAsTemplate()" title="Save this text as a reusable template"><span class="material-symbols-outlined" style="font-size:16px;">bookmark_add</span></button>
+        </div>
+        <input type="hidden" id="cmp-editing" value=""/>
+      </div>
+
+      <div>
+        <label class="slabel" style="display:block;margin-bottom:10px;">Live Preview</label>
+        <div id="cmp-previews" style="display:flex;flex-direction:column;gap:14px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CALENDAR ============ -->
+  <section id="tab-calendar" role="tabpanel" aria-labelledby="calendar" style="display:none;">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div class="slabel">Scheduling</div>
+        <h2 style="font-weight:700;font-size:26px;margin-top:6px;" id="cal-title">This Week</h2>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-g" style="padding:9px 12px;" onclick="calNav(-1)" aria-label="Previous week"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>
+        <button class="btn-g" style="padding:9px 14px;font-size:13px;" onclick="calNav(0)">Today</button>
+        <button class="btn-g" style="padding:9px 12px;" onclick="calNav(1)" aria-label="Next week"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>
+      </div>
+    </div>
+    <div id="cal-wrap"></div>
+    <p class="mono muted" style="font-size:12px;margin-top:14px;">Tip: click an empty slot to schedule a post for that time, or click a post to edit it.</p>
+  </section>
+
+  <!-- ============ CONTENT ============ -->
+  <section id="tab-content" role="tabpanel" aria-labelledby="content" style="display:none;">
+    <div style="margin-bottom:18px;">
+      <div class="slabel">Content Management</div>
+      <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Manage content <span style="color:var(--primary);">efficiently</span></h2>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <div style="position:relative;flex:1;min-width:200px;">
+        <span class="material-symbols-outlined" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;color:rgba(255,255,255,.35);">search</span>
+        <input id="content-search" class="inp" style="padding-left:40px;" placeholder="Search posts…" oninput="renderContent()" aria-label="Search posts"/>
+      </div>
+      <select id="content-sort" class="inp" style="width:auto;min-width:150px;" onchange="renderContent()" aria-label="Sort posts">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="platforms">Most platforms</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;">
+      <button class="ftab active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="ftab" data-filter="draft" onclick="setFilter('draft')">Draft</button>
+      <button class="ftab" data-filter="scheduled" onclick="setFilter('scheduled')">Scheduled</button>
+      <button class="ftab" data-filter="published" onclick="setFilter('published')">Published</button>
+      <div id="bulk-bar" style="display:none;margin-left:auto;align-items:center;gap:10px;">
+        <span id="bulk-count" class="mono muted" style="font-size:12px;"></span>
+        <button class="btn-g" style="padding:6px 12px;font-size:12px;" onclick="bulkDuplicate()"><span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>Duplicate</button>
+        <button class="btn-g btn-danger" style="padding:6px 12px;font-size:12px;" onclick="bulkDelete()"><span class="material-symbols-outlined" style="font-size:14px;">delete</span>Delete</button>
+      </div>
+    </div>
+    <div id="content-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </section>
+
+  <!-- ============ ANALYTICS ============ -->
+  <section id="tab-analytics" role="tabpanel" aria-labelledby="analytics" style="display:none;">
+    <div style="margin-bottom:18px;">
+      <div class="slabel">Insights</div>
+      <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Track performance <span style="color:var(--primary);">at a glance</span></h2>
+      <p class="muted" style="font-size:14px;margin-top:4px;">Simulated analytics across your connected accounts (last 14 days).</p>
+    </div>
+    <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;" id="an-kpis"></div>
+    <div class="analytics-2" style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="chart-card">
+        <div class="chart-title">Engagement — last 14 days</div>
+        <div class="mono muted" style="font-size:11px;margin-bottom:14px;">Daily interactions across platforms</div>
+        <div id="an-line"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Posts by platform</div>
+        <div class="mono muted" style="font-size:11px;margin-bottom:14px;">Distribution of your content</div>
+        <div id="an-bars"></div>
+      </div>
+    </div>
+    <div class="analytics-2" style="display:grid;grid-template-columns:1fr 1.5fr;gap:16px;">
+      <div class="chart-card">
+        <div class="chart-title">Best time to post</div>
+        <div class="mono muted" style="font-size:11px;margin-bottom:14px;">Hotter cells = higher engagement</div>
+        <div id="an-heat"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top performing posts</div>
+        <div class="mono muted" style="font-size:11px;margin-bottom:14px;">Ranked by simulated engagement</div>
+        <div id="an-top" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDIO ============ -->
+  <section id="tab-studio" role="tabpanel" aria-labelledby="studio" style="display:none;">
+    <div style="margin-bottom:18px;">
+      <div class="slabel">Content Studio</div>
+      <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Create posts <span style="color:var(--primary);">faster</span></h2>
+      <p class="muted" style="font-size:14px;margin-top:4px;">Start from a proven template, then tweak it in the composer.</p>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;" id="studio-cats"></div>
+    <div id="studio-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;"></div>
+  </section>
+
+  <!-- ============ ACCOUNTS ============ -->
+  <section id="tab-accounts" role="tabpanel" aria-labelledby="accounts" style="display:none;">
+    <div style="margin-bottom:18px;">
+      <div class="slabel">Connected Accounts</div>
+      <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Connect your social accounts</h2>
+      <p class="muted" style="font-size:14px;margin-top:4px;">Toggle a platform on to use it in the composer. <span class="mono" style="font-size:12px;">(Demo — no real OAuth)</span></p>
+    </div>
+    <div id="accounts-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+  </section>
+
+  <!-- ============ PRICING ============ -->
+  <section id="tab-pricing" role="tabpanel" aria-labelledby="pricing" style="display:none;">
+    <div style="text-align:center;margin-bottom:22px;">
+      <div class="slabel">Pricing</div>
+      <h2 style="font-weight:700;font-size:clamp(26px,3vw,38px);margin-top:8px;">Convert more. <span style="color:var(--primary);">Hassle less.</span></h2>
+      <p class="muted" style="font-size:15px;margin-top:6px;">Simple, fair pricing with human support. Cancel anytime.</p>
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:34px;">
+      <div class="billtoggle" role="tablist" aria-label="Billing period">
+        <button id="bill-monthly" class="billbtn active" onclick="setBilling('monthly')" aria-pressed="true">Monthly</button>
+        <button id="bill-yearly" class="billbtn" onclick="setBilling('yearly')" aria-pressed="false">Yearly <span class="save-badge">Save 17%</span></button>
+      </div>
+    </div>
+    <div id="pricing-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start;"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:34px;flex-wrap:wrap;">
+      <span class="mono muted" style="font-size:12px;">Post to:</span>
+      <div id="pricing-platforms" style="display:flex;gap:7px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="tab-settings" role="tabpanel" aria-labelledby="settings" style="display:none;">
+    <div style="margin-bottom:18px;">
+      <div class="slabel">Settings</div>
+      <h2 style="font-weight:700;font-size:26px;margin-top:6px;">Workspace settings</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="analytics-2">
+      <div class="card" style="padding:22px;">
+        <h3 style="font-weight:700;font-size:16px;margin-bottom:6px;">Brand profile</h3>
+        <p class="muted" style="font-size:12px;margin-bottom:14px;">Shown in post previews.</p>
+        <label class="slabel" style="display:block;margin-bottom:6px;">Display name</label>
+        <input id="set-brand" class="inp" oninput="onSettingsInput()" aria-label="Brand display name"/>
+        <label class="slabel" style="display:block;margin:16px 0 6px;">Handle</label>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="muted">@</span><input id="set-handle" class="inp" oninput="onSettingsInput()" aria-label="Brand handle"/>
+        </div>
+      </div>
+      <div class="card" style="padding:22px;">
+        <h3 style="font-weight:700;font-size:16px;margin-bottom:6px;">Posting defaults</h3>
+        <p class="muted" style="font-size:12px;margin-bottom:14px;">Pre-filled when you compose.</p>
+        <label class="slabel" style="display:block;margin-bottom:6px;">Default time</label>
+        <input id="set-time" type="time" class="inp" step="900" onchange="onSettingsInput()" aria-label="Default posting time"/>
+        <label class="slabel" style="display:block;margin:16px 0 8px;">Default platforms</label>
+        <div id="set-defaults" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+    </div>
+    <div class="card" style="padding:22px;margin-top:16px;">
+      <h3 style="font-weight:700;font-size:16px;margin-bottom:4px;">Data</h3>
+      <div class="srow">
+        <div><div class="sk">Export data</div><div class="sd">Download all posts, accounts &amp; settings as JSON.</div></div>
+        <button class="btn-o" style="padding:9px 16px;font-size:13px;" onclick="exportData()"><span class="material-symbols-outlined" style="font-size:16px;">download</span>Export</button>
+      </div>
+      <div class="srow">
+        <div><div class="sk">Import data</div><div class="sd">Restore from a previously exported JSON file.</div></div>
+        <label class="btn-g" style="padding:9px 16px;font-size:13px;cursor:pointer;"><span class="material-symbols-outlined" style="font-size:16px;">upload</span>Import<input type="file" accept="application/json" style="display:none;" onchange="importData(event)"/></label>
+      </div>
+      <div class="srow">
+        <div><div class="sk" style="color:var(--red);">Reset demo</div><div class="sd">Clear everything and reload the sample data.</div></div>
+        <button class="btn-g btn-danger" style="padding:9px 16px;font-size:13px;" onclick="confirmReset()"><span class="material-symbols-outlined" style="font-size:16px;">restart_alt</span>Reset</button>
+      </div>
+    </div>
+    <div class="card" style="padding:22px;margin-top:16px;">
+      <h3 style="font-weight:700;font-size:16px;margin-bottom:10px;">Keyboard shortcuts</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--text-dim);">
+        <span><span class="kbd">N</span> New post</span>
+        <span><span class="kbd">1</span>–<span class="kbd">6</span> Switch tabs</span>
+        <span><span class="kbd">/</span> Search content</span>
+        <span><span class="kbd">Esc</span> Close dialog</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- post detail popup -->
+<div class="ovl" id="post-modal" role="dialog" aria-modal="true" aria-label="Post details">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="pm-title" style="font-weight:700;font-size:18px;">Post</h3>
+      <button class="iconbtn" style="border:none;" onclick="closeModal()" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="pm-body"></div>
+    <div style="display:flex;gap:10px;margin-top:22px;">
+      <button class="btn-o" style="flex:1;justify-content:center;padding:10px;" onclick="editFromModal()"><span class="material-symbols-outlined" style="font-size:16px;">edit</span>Edit</button>
+      <button class="btn-g btn-danger" style="padding:10px 14px;" onclick="deleteFromModal()"><span class="material-symbols-outlined" style="font-size:16px;">delete</span>Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- confirm dialog -->
+<div class="ovl" id="confirm-modal" role="alertdialog" aria-modal="true" aria-label="Confirm">
+  <div class="modal" style="max-width:400px;">
+    <h3 id="cf-title" style="font-weight:700;font-size:18px;margin-bottom:8px;">Are you sure?</h3>
+    <p id="cf-msg" class="muted" style="font-size:14px;line-height:1.6;margin-bottom:22px;"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn-g" style="padding:10px 18px;" onclick="closeConfirm()">Cancel</button>
+      <button id="cf-ok" class="btn-p" style="padding:10px 18px;">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"><span class="material-symbols-outlined" style="color:var(--primary);font-size:18px;">check_circle</span><span id="toast-msg">Saved</span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// PostVias — front-end-only social scheduler demo.
+// No backend; persists to localStorage. All user text escaped.
+// ═══════════════════════════════════════════════════════════
+
+const PLATFORMS = [
+  { id:'x',         name:'X',         abbr:'X',  color:'#000000', limit:280   },
+  { id:'linkedin',  name:'LinkedIn',  abbr:'in', color:'#0a66c2', limit:3000  },
+  { id:'instagram', name:'Instagram', abbr:'IG', color:'#e1306c', limit:2200  },
+  { id:'tiktok',    name:'TikTok',    abbr:'TT', color:'#25f4ee', limit:2200  },
+  { id:'facebook',  name:'Facebook',  abbr:'f',  color:'#1877f2', limit:5000  },
+  { id:'youtube',   name:'YouTube',   abbr:'YT', color:'#ff0000', limit:5000  },
+  { id:'threads',   name:'Threads',   abbr:'@',  color:'#777777', limit:500   },
+  { id:'pinterest', name:'Pinterest', abbr:'P',  color:'#e60023', limit:500   },
+  { id:'bluesky',   name:'Bluesky',   abbr:'B',  color:'#1185fe', limit:300   },
+];
+const pById = id => PLATFORMS.find(p => p.id === id);
+const SAMPLE_IMG = 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&q=70';
+
+const EMOJIS = ['🚀','✨','🔥','💡','📈','🎯','👇','💪','🙌','✅','⚡','🧵'];
+const HASHTAG_GROUPS = ['#marketing #growth', '#socialmedia #contentcreator', '#startup #founder', '#productivity #tips', '#AI #automation'];
+
+const TEMPLATES = [
+  { cat:'Promo',        text:'🚀 Big news — we just launched {feature}! Early users are already seeing {result}. Try it free today 👇' },
+  { cat:'Promo',        text:'For a limited time: {offer}. No catch, just real value for {audience}. Link in bio.' },
+  { cat:'Tip',          text:'💡 Quick tip: {tip}. It takes 2 minutes and saves you hours. Save this for later.' },
+  { cat:'Tip',          text:'5 things I wish I knew about {topic} when I started:\n\n1. …\n2. …\n3. …\n\nWhich one hits hardest?' },
+  { cat:'Question',     text:'Quick poll — what\'s your biggest struggle with {topic}? Drop it below and I\'ll reply to everyone 👇' },
+  { cat:'Question',     text:'If you could fix ONE thing about {topic} overnight, what would it be?' },
+  { cat:'Announcement', text:'📣 Mark your calendar: {event} is happening on {date}. Spots are limited — reserve yours now.' },
+  { cat:'Announcement', text:'We\'re hiring! Looking for a {role} who loves {thing}. Know someone perfect? Tag them 🙌' },
+  { cat:'Story',        text:'A year ago we were {before}. Today we\'re {after}. Here\'s the one decision that changed everything 🧵' },
+  { cat:'Story',        text:'Behind the scenes of how we built {thing} — the messy, honest version. Thread 👇' },
+  { cat:'Tip',          text:'Consistency beats perfection. Show up daily, even when it\'s small. ✨ Your future self will thank you.' },
+  { cat:'Promo',        text:'Creators are switching to a single dashboard for all 9 platforms. Less copy-paste, more creating. 🎯' },
+];
+
+let posts = [];
+let accounts = {};
+let settings = {};
+let userTemplates = [];
+let selected = new Set();     // platforms selected in composer
+let variants = {};            // per-platform text overrides
+let customizing = false;
+let cmpMedia = '';            // current composer media (URL or data URL)
+let cmpMediaType = '';        // 'image' | 'video' | ''
+let cmpCalRef = new Date();   // week shown in the compose inline calendar
+let curFilter = 'all';
+let bulkSel = new Set();
+let studioCat = 'All';
+let calRefDate = new Date();
+let modalPostId = null;
+let confirmAction = null;
+let lastFocus = null;       // element to restore focus to after a dialog closes
+let analyticsLoaded = false;
+
+// ── storage ───────────────────────────────────────────────
+function save() {
+  try {
+    localStorage.setItem('postvias_posts', JSON.stringify(posts));
+    localStorage.setItem('postvias_accounts', JSON.stringify(accounts));
+    localStorage.setItem('postvias_settings', JSON.stringify(settings));
+    localStorage.setItem('postvias_templates', JSON.stringify(userTemplates));
+  } catch (e) {
+    // Most likely QuotaExceededError from large uploaded media (data URLs).
+    toast('Storage full — uploaded media may be too large to persist', true);
+  }
+}
+function uid() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+// Stable pseudo-random in [0,1) seeded by a string — keeps analytics consistent.
+function seededRand(str) { let h = 2166136261; for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 10000) / 10000; }
+
+// ── seed ──────────────────────────────────────────────────
+function defaultSettings() {
+  return { brand:'Your Brand', handle:'yourbrand', defaultTime:'10:00', defaultPlatforms:['x','linkedin'] };
+}
+function seed() {
+  accounts = { x:true, linkedin:true, instagram:true, tiktok:true, facebook:true, youtube:false, threads:true, pinterest:false, bluesky:false };
+  settings = defaultSettings();
+  userTemplates = [];
+  const now = new Date();
+  const at = (dayOffset, h, m) => { const d = new Date(now); d.setDate(d.getDate()+dayOffset); d.setHours(h,m,0,0); return d.toISOString(); };
+  posts = [
+    { id:uid(), content:'Just shipped our biggest update yet 🚀 One dashboard, nine platforms, zero copy-paste. Cross-posting has never been this clean. #productivity', platforms:['x','linkedin','threads'], media:SAMPLE_IMG, scheduledAt:at(-9,9,30), status:'published', createdAt:at(-10,12,0) },
+    { id:uid(), content:'Behind the scenes of how we plan a full week of content in under 10 minutes. Thread below 👇 #contentcreator', platforms:['x','linkedin'], media:'', scheduledAt:at(-7,14,0), status:'published', createdAt:at(-8,10,0) },
+    { id:uid(), content:'Consistency beats perfection. Show up daily, even when it\'s small. ✨', platforms:['instagram','threads'], media:SAMPLE_IMG, scheduledAt:at(-6,11,0), status:'published', createdAt:at(-7,9,0) },
+    { id:uid(), content:'5 hooks that doubled our reach last month. Save this one. 🔥 #marketing #growth', platforms:['instagram','tiktok','facebook'], media:SAMPLE_IMG, scheduledAt:at(-4,11,0), status:'published', createdAt:at(-5,9,0) },
+    { id:uid(), content:'Quick tip: batch your content. One sitting, a week of posts. 💡', platforms:['x','linkedin'], media:'', scheduledAt:at(-2,15,0), status:'published', createdAt:at(-3,9,0) },
+    { id:uid(), content:'New blog: the creator\'s guide to consistent posting without burning out.', platforms:['linkedin','facebook'], media:'', scheduledAt:at(0,16,30), status:'scheduled', createdAt:at(-1,9,0) },
+    { id:uid(), content:'Reminder: consistency beats perfection. Show up daily. ✨', platforms:['x','threads','instagram'], media:'', scheduledAt:at(1,10,0), status:'scheduled', createdAt:at(0,8,0) },
+    { id:uid(), content:'Weekend project idea: batch a month of content in one sitting. Here\'s our template. 🎯', platforms:['instagram','pinterest'], media:SAMPLE_IMG, scheduledAt:at(2,12,0), status:'scheduled', createdAt:at(0,8,0) },
+    { id:uid(), content:'Quick poll — what\'s your biggest struggle with social media? Reply below. 👇', platforms:['x','linkedin'], media:'', scheduledAt:at(3,15,0), status:'scheduled', createdAt:at(0,8,0) },
+    { id:uid(), content:'Draft: announcement for the upcoming live workshop. Need to finalize the date.', platforms:['linkedin'], media:'', scheduledAt:'', status:'draft', createdAt:at(0,7,0) },
+    { id:uid(), content:'Draft idea: a carousel breaking down our posting workflow step by step.', platforms:['instagram','linkedin'], media:'', scheduledAt:'', status:'draft', createdAt:at(0,7,0) },
+  ];
+  save();
+}
+function load() {
+  try { posts = JSON.parse(localStorage.getItem('postvias_posts')) || null; } catch(e){ posts = null; }
+  try { accounts = JSON.parse(localStorage.getItem('postvias_accounts')) || null; } catch(e){ accounts = null; }
+  try { settings = JSON.parse(localStorage.getItem('postvias_settings')) || null; } catch(e){ settings = null; }
+  try { userTemplates = JSON.parse(localStorage.getItem('postvias_templates')) || []; } catch(e){ userTemplates = []; }
+  if (!posts || !accounts) seed();
+  if (!settings) { settings = defaultSettings(); save(); }
+}
+
+// ── engagement model (deterministic, demo) ────────────────
+function engagementOf(p) {
+  const base = 120 + p.platforms.length * 90;
+  const lenFactor = Math.min(p.content.length, 280) * 1.4;
+  const hasMedia = p.media ? 260 : 0;
+  const noise = seededRand(p.id) * 400;
+  const reach = Math.round(base * 6 + lenFactor * 5 + hasMedia * 4 + noise * 5);
+  const likes = Math.round(reach * (0.05 + seededRand(p.id+'l') * 0.04));
+  const comments = Math.round(likes * (0.08 + seededRand(p.id+'c') * 0.06));
+  const shares = Math.round(likes * (0.05 + seededRand(p.id+'s') * 0.05));
+  const total = likes + comments + shares;
+  const rate = reach ? (total / reach * 100) : 0;
+  return { reach, likes, comments, shares, total, rate };
+}
+
+// ── stats ─────────────────────────────────────────────────
+function renderStats() {
+  const conn = Object.values(accounts).filter(Boolean).length;
+  document.getElementById('st-conn').textContent = conn + '/9';
+  document.getElementById('st-sched').textContent = posts.filter(p => p.status==='scheduled').length;
+  const pub = posts.filter(p => p.status==='published');
+  document.getElementById('st-pub').textContent = pub.length;
+  const avg = pub.length ? (pub.reduce((s,p)=>s+engagementOf(p).rate,0) / pub.length) : 0;
+  document.getElementById('st-eng').textContent = avg.toFixed(1) + '%';
+}
+
+// ── tabs ──────────────────────────────────────────────────
+const TABS = ['compose','calendar','content','analytics','studio','accounts','pricing','settings'];
+function switchTab(tab) {
+  TABS.forEach(t => { const el = document.getElementById('tab-'+t); if (el) el.style.display = (t===tab) ? 'block' : 'none'; });
+  document.querySelectorAll('.tabbtn').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab===tab)));
+  if (typeof updateTabRoving === 'function') updateTabRoving();
+  if (tab==='calendar') renderCalendar();
+  if (tab==='content') renderContent();
+  if (tab==='analytics') renderAnalytics();
+  if (tab==='pricing') renderPricing();
+  if (tab==='studio') renderStudio();
+  if (tab==='accounts') renderAccounts();
+  if (tab==='settings') renderSettings();
+  if (tab==='compose') { renderComposePlatforms(); renderQuickInsert(); renderVariants(); onComposeInput(); }
+  if (window.PVanim) window.PVanim.enter(document.getElementById('tab-'+tab));
+  window.scrollTo({ top:0, behavior: (window.PVanim && window.PVanim.reduce) ? 'auto' : 'smooth' });
+}
+function newPost() { resetComposer(); switchTab('compose'); document.getElementById('cmp-text').focus(); }
+
+// ── composer ──────────────────────────────────────────────
+function renderComposePlatforms() {
+  const box = document.getElementById('cmp-platforms');
+  box.innerHTML = '';
+  PLATFORMS.forEach(p => {
+    const connected = !!accounts[p.id];
+    const chip = document.createElement('div');
+    chip.className = 'pchip' + (selected.has(p.id) ? ' sel' : '') + (connected ? '' : ' off');
+    chip.setAttribute('role', 'button');
+    chip.setAttribute('tabindex', connected ? '0' : '-1');
+    chip.setAttribute('aria-pressed', String(selected.has(p.id)));
+    chip.innerHTML = `<span class="pi" style="background:${p.color}">${esc(p.abbr)}</span>${esc(p.name)}`;
+    if (connected) {
+      const toggle = () => { selected.has(p.id) ? selected.delete(p.id) : selected.add(p.id); renderComposePlatforms(); renderVariants(); onComposeInput(); };
+      chip.onclick = toggle;
+      chip.onkeydown = e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); toggle(); } };
+    } else { chip.title = 'Connect this account first (Accounts tab)'; }
+    box.appendChild(chip);
+  });
+}
+function renderQuickInsert() {
+  const box = document.getElementById('cmp-quick');
+  if (!box) return;
+  box.innerHTML = '';
+  EMOJIS.slice(0,8).forEach(e => {
+    const t = document.createElement('span'); t.className = 'tag'; t.textContent = e; t.title = 'Insert emoji';
+    t.onclick = () => insertAtCursor(e + ' '); box.appendChild(t);
+  });
+  HASHTAG_GROUPS.slice(0,3).forEach(h => {
+    const t = document.createElement('span'); t.className = 'tag'; t.textContent = h; t.style.color = 'var(--secondary)';
+    t.onclick = () => insertAtCursor(' ' + h); box.appendChild(t);
+  });
+}
+function insertAtCursor(text) {
+  const ta = document.getElementById('cmp-text');
+  const s = ta.selectionStart ?? ta.value.length, e = ta.selectionEnd ?? ta.value.length;
+  ta.value = ta.value.slice(0,s) + text + ta.value.slice(e);
+  ta.focus(); ta.selectionStart = ta.selectionEnd = s + text.length;
+  onComposeInput();
+}
+function onComposeInput() {
+  const txt = document.getElementById('cmp-text').value;
+  const tags = (txt.match(/#\w+/g) || []).length;
+  document.getElementById('cmp-count').textContent = `${txt.length} character${txt.length===1?'':'s'} · ${tags} hashtag${tags===1?'':'s'}`;
+  let warn = '';
+  selected.forEach(id => { const p = pById(id); const t = variants[id] != null ? variants[id] : txt; if (t.length > p.limit) warn = `Over ${p.name} limit (${p.limit})`; });
+  document.getElementById('cmp-limit').textContent = warn;
+  renderPreviews();
+}
+function toggleCustomize() {
+  customizing = !customizing;
+  document.getElementById('cmp-custom-chk').classList.toggle('on', customizing);
+  document.getElementById('cmp-variants').style.display = customizing ? 'block' : 'none';
+  if (!customizing) variants = {};
+  renderVariants(); onComposeInput();
+}
+function renderVariants() {
+  const box = document.getElementById('cmp-variants');
+  if (!customizing) { box.innerHTML = ''; return; }
+  const sel = [...selected];
+  if (!sel.length) { box.innerHTML = '<p class="muted" style="font-size:12px;">Select platforms to customize each one.</p>'; return; }
+  box.innerHTML = sel.map(id => { const p = pById(id);
+    return `<div style="margin-bottom:10px;">
+      <label class="slabel" style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span class="pi" style="background:${p.color}">${esc(p.abbr)}</span>${esc(p.name)} <span style="color:rgba(255,255,255,.3);text-transform:none;letter-spacing:0;">(blank = use main text)</span></label>
+      <textarea class="inp" style="min-height:70px;" data-vid="${id}" oninput="onVariantInput('${id}', this.value)" placeholder="Custom text for ${esc(p.name)}…">${esc(variants[id] || '')}</textarea>
+    </div>`;
+  }).join('');
+}
+function onVariantInput(id, val) { if (val.trim()==='') delete variants[id]; else variants[id] = val; onComposeInput(); }
+function textFor(id, baseText) { return (variants[id] != null && variants[id].trim() !== '') ? variants[id] : baseText; }
+
+function renderPreviews() {
+  const txt = document.getElementById('cmp-text').value;
+  const media = cmpMedia;
+  const box = document.getElementById('cmp-previews');
+  box.innerHTML = '';
+  if (selected.size === 0) {
+    box.innerHTML = '<div class="card" style="padding:22px;text-align:center;color:var(--text-dim);font-size:13px;">Select at least one platform to preview your post.</div>';
+    return;
+  }
+  selected.forEach(id => {
+    const p = pById(id);
+    const ptext = textFor(id, txt);
+    const el = document.createElement('div');
+    el.className = 'prev';
+    const over = ptext.length > p.limit;
+    el.innerHTML =
+      `<div class="prev-head">
+        <div class="prev-av" style="background:${p.color}">${esc(p.abbr)}</div>
+        <div>
+          <div style="font-weight:700;font-size:14px;">${esc(settings.brand || 'Your Brand')}</div>
+          <div class="mono" style="font-size:11px;color:var(--text-dim);">@${esc(settings.handle || 'yourbrand')} · ${esc(p.name)}</div>
+        </div>
+      </div>
+      <div class="prev-text">${esc(ptext) || '<span style="color:rgba(255,255,255,.3)">Your post text will appear here…</span>'}</div>` +
+      (media ? (cmpMediaType==='video'
+        ? `<video class="prev-media" src="${esc(media)}" muted playsinline controls></video>`
+        : `<img class="prev-media" src="${esc(media)}" alt="" onerror="this.style.display='none'"/>`) : '') +
+      (over ? `<div class="mono" style="font-size:11px;color:var(--red);margin-top:8px;">⚠ ${ptext.length}/${p.limit} — too long for ${esc(p.name)}</div>` : '');
+    box.appendChild(el);
+  });
+}
+
+// ── media upload (image / video) ──────────────────────────
+const MEDIA_MAX = 8 * 1024 * 1024;   // 8 MB cap (localStorage friendliness)
+function isVideo(src, type) {
+  if (type) return type.indexOf('video') === 0;
+  if (!src) return false;
+  if (src.indexOf('data:video') === 0) return true;
+  return /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(src);
+}
+function onMediaUrl() {
+  const v = document.getElementById('cmp-media').value.trim();
+  cmpMedia = v; cmpMediaType = v ? (isVideo(v) ? 'video' : 'image') : '';
+  renderMediaPreview(); renderPreviews();
+}
+function onFilePick(e) { const f = e.target.files[0]; if (f) setMediaFromFile(f); e.target.value = ''; }
+function onFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('cmp-dropzone').classList.remove('drag');
+  const f = e.dataTransfer.files[0]; if (f) setMediaFromFile(f);
+}
+function setMediaFromFile(file) {
+  if (!/^(image|video)\//.test(file.type)) { toast('Only image or video files', true); return; }
+  if (file.size > MEDIA_MAX) { toast('File too large (max 8 MB)', true); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    cmpMedia = reader.result; cmpMediaType = file.type.indexOf('video') === 0 ? 'video' : 'image';
+    document.getElementById('cmp-media').value = '';
+    renderMediaPreview(); renderPreviews();
+    toast((cmpMediaType==='video' ? 'Video' : 'Image') + ' added');
+  };
+  reader.onerror = () => toast('Could not read file', true);
+  reader.readAsDataURL(file);
+}
+function clearMedia() {
+  cmpMedia = ''; cmpMediaType = '';
+  document.getElementById('cmp-media').value = '';
+  document.getElementById('cmp-file').value = '';
+  renderMediaPreview(); renderPreviews();
+}
+function renderMediaPreview() {
+  const empty = document.getElementById('cmp-media-empty');
+  const prev = document.getElementById('cmp-media-preview');
+  const dz = document.getElementById('cmp-dropzone');
+  if (!cmpMedia) { empty.style.display = 'flex'; prev.style.display = 'none'; prev.innerHTML = ''; dz.style.position = ''; return; }
+  empty.style.display = 'none'; prev.style.display = 'block'; dz.style.position = 'relative';
+  const inner = cmpMediaType==='video'
+    ? `<video src="${esc(cmpMedia)}" muted playsinline controls onerror="this.style.display='none'"></video>`
+    : `<img src="${esc(cmpMedia)}" alt="" onerror="this.style.display='none'"/>`;
+  prev.innerHTML = inner + `<button class="media-remove" onclick="event.stopPropagation();clearMedia()" aria-label="Remove media"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>`;
+}
+function useSampleImg() { cmpMedia = SAMPLE_IMG; cmpMediaType = 'image'; document.getElementById('cmp-media').value = ''; renderMediaPreview(); renderPreviews(); }
+
+// ── schedule date <-> inline calendar picker ──────────────
+function setSchedDate(iso) {
+  const el = document.getElementById('cmp-date');
+  el.dataset.iso = iso || '';
+  el.value = iso ? new Date(iso + 'T00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) : '';
+  renderComposeCal();
+}
+function getSchedDate() { return document.getElementById('cmp-date').dataset.iso || ''; }
+function toggleComposeCal() {
+  const panel = document.getElementById('cmp-cal');
+  const open = panel.style.display === 'none' || !panel.style.display;
+  if (open) {
+    const iso = getSchedDate(); cmpCalRef = iso ? new Date(iso + 'T00:00') : new Date();
+    panel.style.display = 'block'; renderComposeCal();
+    if (window.PVanim) window.PVanim.enter(panel);
+  } else { panel.style.display = 'none'; }
+}
+function composeCalNav(dir) { cmpCalRef = new Date(cmpCalRef); cmpCalRef.setDate(cmpCalRef.getDate() + dir*7); renderComposeCal(); }
+function renderComposeCal() {
+  const panel = document.getElementById('cmp-cal');
+  if (!panel || panel.style.display === 'none') return;
+  const start = mondayOf(cmpCalRef);
+  const days = [...Array(7)].map((_,i) => { const d = new Date(start); d.setDate(d.getDate()+i); return d; });
+  const today = new Date(); today.setHours(0,0,0,0);
+  const fmt = d => d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  document.getElementById('cmp-cal-title').textContent = fmt(days[0]) + ' – ' + fmt(days[6]);
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hours = [9,11,13,15,17];
+  const pickedISO = getSchedDate();
+  const pickedTime = document.getElementById('cmp-time').value;
+  let html = '<div style="display:grid;grid-template-columns:34px repeat(7,1fr);border:1px solid var(--border);border-radius:8px;overflow:hidden;">';
+  html += '<div></div>';
+  days.forEach((d,i) => { const isT = d.getTime()===today.getTime();
+    html += `<div style="text-align:center;padding:5px 2px;border-left:1px solid rgba(255,255,255,.04);"><div class="mono" style="font-size:9px;color:var(--text-dim);">${dayNames[i]}</div><div style="font-weight:700;font-size:12px;${isT?'color:var(--primary);':''}">${d.getDate()}</div></div>`;
+  });
+  hours.forEach(h => {
+    html += `<div class="mono" style="font-size:9px;color:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:flex-end;padding-right:5px;border-bottom:1px solid rgba(255,255,255,.04);">${String(h).padStart(2,'0')}</div>`;
+    days.forEach(d => {
+      const ds = d.toISOString().slice(0,10);
+      const hh = String(h).padStart(2,'0') + ':00';
+      const picked = ds===pickedISO && pickedTime===hh;
+      const has = posts.some(p => p.scheduledAt && (p.status==='scheduled'||p.status==='published') && new Date(p.scheduledAt).toISOString().slice(0,10)===ds && Math.abs(new Date(p.scheduledAt).getHours()-h) < 1);
+      html += `<div class="cc-cell${picked?' picked':''}${has&&!picked?' has':''}" onclick="pickComposeSlot('${ds}','${hh}')" title="${dayNames[(d.getDay()+6)%7]} ${hh}">${has?'<span class="cc-dot"></span>':''}</div>`;
+    });
+  });
+  html += '</div>';
+  document.getElementById('cmp-cal-grid').innerHTML = html;
+}
+function pickComposeSlot(ds, time) {
+  document.getElementById('cmp-time').value = time;
+  setSchedDate(ds);
+  toast('Scheduled · ' + new Date(ds + 'T' + time).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) + ' ' + time);
+}
+function syncComposeCal() { renderComposeCal(); }
+function suggestBestTime() {
+  // Pick the next occurrence of the historically best (weekday, hour) slot.
+  const heat = bestTimeMatrix();
+  let best = { v:-1, day:0, hour:9 };
+  heat.forEach((row,di) => row.forEach((v,hi) => { if (v > best.v) best = { v, day:di, hour:[9,11,13,15,17][hi] }; }));
+  const now = new Date(); const d = new Date(now);
+  for (let i=0;i<14;i++){ if (((d.getDay()+6)%7) === best.day && (i>0 || now.getHours() < best.hour)) break; d.setDate(d.getDate()+1); }
+  setSchedDate(d.toISOString().slice(0,10));
+  document.getElementById('cmp-time').value = String(best.hour).padStart(2,'0') + ':00';
+  toast('Best slot: ' + ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][best.day] + ' ' + String(best.hour).padStart(2,'0') + ':00');
+}
+function resetComposer() {
+  document.getElementById('cmp-text').value = '';
+  cmpMedia = ''; cmpMediaType = '';
+  document.getElementById('cmp-media').value = '';
+  document.getElementById('cmp-file').value = '';
+  renderMediaPreview();
+  document.getElementById('cmp-cal').style.display = 'none';
+  setSchedDate('');
+  document.getElementById('cmp-time').value = settings.defaultTime || '';
+  document.getElementById('cmp-editing').value = '';
+  selected = new Set((settings.defaultPlatforms || []).filter(id => accounts[id]));
+  variants = {}; customizing = false;
+  document.getElementById('cmp-custom-chk').classList.remove('on');
+  document.getElementById('cmp-variants').style.display = 'none';
+  document.getElementById('cmp-primary').innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">send</span>Post Now';
+  renderComposePlatforms(); renderVariants(); onComposeInput();
+}
+function submitPost(forceDraft) {
+  const text = document.getElementById('cmp-text').value.trim();
+  const media = cmpMedia;
+  const date = getSchedDate();
+  const time = document.getElementById('cmp-time').value;
+  const editing = document.getElementById('cmp-editing').value;
+
+  if (!text && !media) { toast('Write something or add media first', true); return; }
+  if (forceDraft !== 'draft' && selected.size === 0) { toast('Select at least one platform', true); return; }
+
+  let status, scheduledAt = '';
+  if (forceDraft === 'draft') { status = 'draft'; }
+  else if (date && time) { scheduledAt = new Date(date + 'T' + time).toISOString(); status = (new Date(scheduledAt) <= new Date()) ? 'published' : 'scheduled'; }
+  else { status = 'published'; scheduledAt = new Date().toISOString(); }
+
+  const cleanVariants = {}; selected.forEach(id => { if (variants[id] != null && variants[id].trim() !== '') cleanVariants[id] = variants[id]; });
+
+  if (editing) {
+    const i = posts.findIndex(p => p.id === editing);
+    if (i >= 0) posts[i] = { ...posts[i], content:text, platforms:[...selected], media, mediaType:cmpMediaType, scheduledAt, status, variants:cleanVariants };
+    toast('Post updated');
+  } else {
+    posts.unshift({ id:uid(), content:text, platforms:[...selected], media, mediaType:cmpMediaType, scheduledAt, status, variants:cleanVariants, createdAt:new Date().toISOString() });
+    toast(status==='scheduled' ? 'Post scheduled' : status==='draft' ? 'Draft saved' : 'Posted to ' + selected.size + ' platform' + (selected.size>1?'s':''));
+  }
+  save(); renderStats(); resetComposer();
+  switchTab(status==='scheduled' ? 'calendar' : 'content');
+}
+function saveAsTemplate() {
+  const text = document.getElementById('cmp-text').value.trim();
+  if (!text) { toast('Write something to save as template', true); return; }
+  userTemplates.unshift({ cat:'Saved', text });
+  save(); toast('Saved to your templates');
+}
+
+// ── calendar ──────────────────────────────────────────────
+function mondayOf(d) { const x = new Date(d); const day = (x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
+function calNav(dir) {
+  if (dir===0) calRefDate = new Date();
+  else { calRefDate = new Date(calRefDate); calRefDate.setDate(calRefDate.getDate() + dir*7); }
+  renderCalendar();
+}
+function renderCalendar() {
+  const start = mondayOf(calRefDate);
+  const days = [...Array(7)].map((_,i) => { const d = new Date(start); d.setDate(d.getDate()+i); return d; });
+  const today = new Date(); today.setHours(0,0,0,0);
+  const fmt = d => d.toLocaleDateString('en-US',{ month:'short', day:'numeric' });
+  document.getElementById('cal-title').textContent = fmt(days[0]) + ' – ' + fmt(days[6]);
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hours = [9,11,13,15,17];
+  let html = '<div class="calgrid">';
+  html += '<div class="calhead"></div>';
+  days.forEach((d,i) => {
+    const isToday = d.getTime() === today.getTime();
+    html += `<div class="calhead${isToday?' today':''}"><div class="mono" style="font-size:10px;color:var(--text-dim);">${dayNames[i]}</div><div style="font-weight:700;${isToday?'color:var(--primary);':''}">${d.getDate()}</div></div>`;
+  });
+  hours.forEach(h => {
+    html += `<div class="caltime">${String(h).padStart(2,'0')}:00</div>`;
+    days.forEach(d => {
+      const cellStart = new Date(d); cellStart.setHours(h,0,0,0);
+      const cellEnd = new Date(d); cellEnd.setHours(h+2,0,0,0);
+      const isToday = d.getTime() === today.getTime();
+      const inCell = posts.filter(p => p.scheduledAt && (p.status==='scheduled'||p.status==='published') && (()=>{ const t=new Date(p.scheduledAt); return t>=cellStart && t<cellEnd; })());
+      let chips = '';
+      inCell.forEach(p => {
+        const c = p.status==='published' ? 'var(--green)' : 'var(--secondary)';
+        const bgc = p.status==='published' ? 'rgba(16,185,129,.12)' : 'rgba(0,209,255,.12)';
+        chips += `<div class="calpost" draggable="true" ondragstart="dragPost(event,'${p.id}')" ondragend="dragEnd(event)" style="border-left-color:${c};background:${bgc};color:#fff;" onclick="event.stopPropagation();openModal('${p.id}')">${new Date(p.scheduledAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})} · ${esc(p.content.slice(0,18))}</div>`;
+      });
+      const dateStr = d.toISOString().slice(0,10);
+      html += `<div class="calcell${isToday?' today':''}" onclick="composeAt('${dateStr}','${String(h).padStart(2,'0')}:00')" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="dropPost(event,'${dateStr}',${h})">${chips}</div>`;
+    });
+  });
+  html += '</div>';
+  document.getElementById('cal-wrap').innerHTML = html;
+}
+// Drag a scheduled post to a different day/time slot.
+function dragPost(e, id) { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; e.target.classList.add('dragging'); e.stopPropagation(); }
+function dragEnd(e) { e.target.classList.remove('dragging'); }
+function dropPost(e, dateStr, hour) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const id = e.dataTransfer.getData('text/plain');
+  const p = posts.find(x => x.id === id); if (!p) return;
+  const d = new Date(dateStr + 'T00:00'); d.setHours(hour, 0, 0, 0);
+  const iso = d.toISOString();
+  if (p.scheduledAt === iso) return;
+  p.scheduledAt = iso;
+  if (p.status === 'draft') p.status = 'scheduled';
+  save(); renderCalendar(); renderStats();
+  toast('Moved to ' + d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) + ' ' + String(hour).padStart(2,'0') + ':00');
+}
+function composeAt(date, time) {
+  resetComposer();
+  setSchedDate(date);
+  document.getElementById('cmp-time').value = time;
+  PLATFORMS.forEach(p => { if (accounts[p.id]) selected.add(p.id); });
+  switchTab('compose');
+  renderComposePlatforms(); onComposeInput();
+}
+
+// ── content list ──────────────────────────────────────────
+function setFilter(f) {
+  curFilter = f;
+  document.querySelectorAll('.ftab').forEach(b => b.classList.toggle('active', b.dataset.filter===f));
+  renderContent();
+}
+function statusBadge(s) {
+  if (s==='published') return '<span class="bg">Published</span>';
+  if (s==='scheduled') return '<span class="bc">Scheduled</span>';
+  return '<span class="bdim">Draft</span>';
+}
+function getFilteredPosts() {
+  const q = (document.getElementById('content-search').value || '').trim().toLowerCase();
+  const sort = document.getElementById('content-sort').value;
+  let items = posts.slice();
+  if (curFilter !== 'all') items = items.filter(p => p.status===curFilter);
+  if (q) items = items.filter(p => p.content.toLowerCase().includes(q) || p.platforms.some(id => pById(id).name.toLowerCase().includes(q)));
+  if (sort==='oldest') items.sort((a,b)=> new Date(a.scheduledAt||a.createdAt) - new Date(b.scheduledAt||b.createdAt));
+  else if (sort==='platforms') items.sort((a,b)=> b.platforms.length - a.platforms.length);
+  else items.sort((a,b)=> new Date(b.scheduledAt||b.createdAt) - new Date(a.scheduledAt||a.createdAt));
+  return items;
+}
+function renderContent() {
+  const list = document.getElementById('content-list');
+  const items = getFilteredPosts();
+  updateBulkBar();
+  if (items.length === 0) {
+    list.innerHTML = `<div class="empty"><span class="material-symbols-outlined">inbox</span><div style="font-size:15px;">No posts here yet</div><div style="font-size:13px;margin-top:4px;">Try a different filter or <a href="#" onclick="newPost();return false;" style="color:var(--primary);">create a post</a>.</div></div>`;
+    return;
+  }
+  list.innerHTML = '';
+  items.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'crow' + (bulkSel.has(p.id) ? ' sel' : '');
+    const icons = p.platforms.map(id => { const pl=pById(id); return `<span class="pi-lg" style="background:${pl.color}" title="${esc(pl.name)}">${esc(pl.abbr)}</span>`; }).join('');
+    const when = p.scheduledAt ? new Date(p.scheduledAt).toLocaleString('en-US',{ month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'No date';
+    const eng = p.status==='published' ? engagementOf(p) : null;
+    row.innerHTML =
+      `<button class="chk ${bulkSel.has(p.id)?'on':''}" onclick="toggleBulk('${p.id}')" aria-label="Select post"><span class="material-symbols-outlined">check</span></button>` +
+      (p.media
+        ? (isVideo(p.media, p.mediaType)
+          ? `<video src="${esc(p.media)}" muted playsinline style="width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);"></video>`
+          : `<img src="${esc(p.media)}" alt="" style="width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);" onerror="this.style.display='none'"/>`)
+        : `<div style="width:60px;height:60px;border-radius:8px;flex-shrink:0;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;"><span class="material-symbols-outlined" style="color:rgba(255,255,255,.25);">article</span></div>`) +
+      `<div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">${statusBadge(p.status)}<span class="mono" style="font-size:11px;color:var(--text-dim);">${esc(when)}</span>${eng?`<span class="mono" style="font-size:11px;color:var(--primary);">♥ ${eng.total.toLocaleString()} · ${eng.rate.toFixed(1)}%</span>`:''}</div>
+        <div style="font-size:14px;color:#e5e5e5;line-height:1.5;margin-bottom:8px;">${esc(p.content.slice(0,140))}${p.content.length>140?'…':''}</div>
+        <div style="display:flex;gap:5px;">${icons}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+        <button class="btn-g" style="padding:6px 10px;font-size:12px;" onclick="editPost('${p.id}')"><span class="material-symbols-outlined" style="font-size:14px;">edit</span>Edit</button>
+        <button class="btn-g" style="padding:6px 10px;font-size:12px;" onclick="duplicatePost('${p.id}')"><span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>Copy</button>
+        <button class="btn-g btn-danger" style="padding:6px 10px;font-size:12px;" onclick="removePost('${p.id}')" aria-label="Delete post"><span class="material-symbols-outlined" style="font-size:14px;">delete</span></button>
+      </div>`;
+    list.appendChild(row);
+  });
+  if (window.PVanim) window.PVanim.stagger(list.children);
+}
+function toggleBulk(id) { bulkSel.has(id) ? bulkSel.delete(id) : bulkSel.add(id); renderContent(); }
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  // prune ids no longer present
+  [...bulkSel].forEach(id => { if (!posts.some(p=>p.id===id)) bulkSel.delete(id); });
+  if (bulkSel.size) { bar.style.display='flex'; document.getElementById('bulk-count').textContent = bulkSel.size + ' selected'; }
+  else bar.style.display='none';
+}
+function bulkDuplicate() {
+  [...bulkSel].forEach(id => { const p = posts.find(x=>x.id===id); if (p) posts.unshift({ ...p, id:uid(), status:'draft', scheduledAt:'', createdAt:new Date().toISOString() }); });
+  toast(bulkSel.size + ' duplicated as drafts'); bulkSel.clear(); save(); renderStats(); renderContent();
+}
+function bulkDelete() {
+  const n = bulkSel.size;
+  showConfirm('Delete ' + n + ' post' + (n>1?'s':'') + '?', 'This cannot be undone.', () => {
+    posts = posts.filter(p => !bulkSel.has(p.id)); bulkSel.clear(); save(); renderStats(); renderContent(); toast(n + ' deleted');
+  });
+}
+function editPost(id) {
+  const p = posts.find(x => x.id===id); if (!p) return;
+  resetComposer();
+  document.getElementById('cmp-text').value = p.content;
+  cmpMedia = p.media || '';
+  cmpMediaType = p.mediaType || (isVideo(p.media) ? 'video' : (p.media ? 'image' : ''));
+  // show plain URLs back in the URL field; uploaded (data URL) media just shows the preview
+  document.getElementById('cmp-media').value = (cmpMedia && cmpMedia.indexOf('data:') !== 0) ? cmpMedia : '';
+  renderMediaPreview();
+  document.getElementById('cmp-editing').value = p.id;
+  if (p.scheduledAt) { const d = new Date(p.scheduledAt); setSchedDate(d.toISOString().slice(0,10)); document.getElementById('cmp-time').value = d.toTimeString().slice(0,5); }
+  selected = new Set(p.platforms);
+  variants = Object.assign({}, p.variants || {});
+  if (Object.keys(variants).length) { customizing = true; document.getElementById('cmp-custom-chk').classList.add('on'); document.getElementById('cmp-variants').style.display='block'; }
+  document.getElementById('cmp-primary').innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">save</span>Update Post';
+  switchTab('compose');
+  renderComposePlatforms(); renderVariants(); onComposeInput();
+}
+function duplicatePost(id) {
+  const p = posts.find(x => x.id===id); if (!p) return;
+  posts.unshift({ ...p, id:uid(), status:'draft', scheduledAt:'', createdAt:new Date().toISOString() });
+  save(); renderStats(); renderContent(); toast('Duplicated as draft');
+}
+function removePost(id) {
+  showConfirm('Delete this post?', 'This cannot be undone.', () => { posts = posts.filter(p => p.id!==id); save(); renderStats(); renderContent(); toast('Post deleted'); });
+}
+
+// ── analytics ─────────────────────────────────────────────
+function bestTimeMatrix() {
+  // 7 days (Mon..Sun) x 5 slots (9,11,13,15,17) intensity from published posts.
+  const slots = [9,11,13,15,17];
+  const m = [...Array(7)].map(()=>[0,0,0,0,0]);
+  posts.filter(p=>p.status==='published' && p.scheduledAt).forEach(p => {
+    const d = new Date(p.scheduledAt); const day = (d.getDay()+6)%7;
+    let si = 0, bestDiff = 99; slots.forEach((s,i)=>{ const diff=Math.abs(d.getHours()-s); if (diff<bestDiff){bestDiff=diff;si=i;} });
+    m[day][si] += engagementOf(p).total;
+  });
+  // add a gentle deterministic baseline so the heatmap is never empty
+  for (let d=0; d<7; d++) for (let s=0; s<5; s++) m[d][s] += Math.round(seededRand('h'+d+s) * 300 + (s===1||s===2?200:0));
+  return m;
+}
+function skelBlock(h) { return `<div class="skel" style="height:${h}px;width:100%;"></div>`; }
+function showAnalyticsSkeleton() {
+  document.getElementById('an-kpis').innerHTML = [0,1,2,3].map(()=>`<div class="stat">${skelBlock(46)}</div>`).join('');
+  document.getElementById('an-line').innerHTML = skelBlock(170);
+  document.getElementById('an-bars').innerHTML = [0,1,2,3,4].map(()=>`<div style="margin-bottom:11px;">${skelBlock(22)}</div>`).join('');
+  document.getElementById('an-heat').innerHTML = skelBlock(190);
+  document.getElementById('an-top').innerHTML = [0,1,2,3,4].map(()=>skelBlock(46)).join('');
+}
+function renderAnalytics() {
+  // First open shows a brief skeleton so charts feel "loaded", like a real dashboard.
+  if (!analyticsLoaded) { analyticsLoaded = true; showAnalyticsSkeleton(); setTimeout(renderAnalyticsNow, 360); return; }
+  renderAnalyticsNow();
+}
+function renderAnalyticsNow() {
+  const pub = posts.filter(p => p.status==='published');
+  const tot = pub.reduce((a,p)=>{ const e=engagementOf(p); a.reach+=e.reach; a.likes+=e.likes; a.comments+=e.comments; a.shares+=e.shares; return a; }, {reach:0,likes:0,comments:0,shares:0});
+  const rate = pub.length ? (pub.reduce((s,p)=>s+engagementOf(p).rate,0)/pub.length) : 0;
+  const kpi = (v,l,c,delta) => `<div class="stat" style="border-left-color:${c};"><div class="v" style="color:${c};">${v}</div><div class="l">${l}</div>${delta?`<div class="delta" style="color:var(--green);">▲ ${delta}</div>`:''}</div>`;
+  document.getElementById('an-kpis').innerHTML =
+    kpi(tot.reach.toLocaleString(),'Total Reach','var(--primary)','12.4%') +
+    kpi(tot.likes.toLocaleString(),'Likes','var(--secondary)','8.1%') +
+    kpi((tot.comments+tot.shares).toLocaleString(),'Comments + Shares','var(--amber)','5.6%') +
+    kpi(rate.toFixed(1)+'%','Avg. Eng. Rate','var(--green)','1.2pt');
+
+  // line chart: last 14 days engagement
+  const days = 14, series = [];
+  for (let i=days-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+    const dayTotal = pub.filter(p=>{ const t=new Date(p.scheduledAt||p.createdAt); t.setHours(0,0,0,0); return t.getTime()===d.getTime(); }).reduce((s,p)=>s+engagementOf(p).total,0);
+    series.push({ d, v: dayTotal + Math.round(seededRand('d'+d.getTime()) * 180 + 60) });
+  }
+  document.getElementById('an-line').innerHTML = svgLine(series);
+
+  // bars: posts per platform
+  const counts = PLATFORMS.map(p => ({ p, n: posts.filter(x=>x.platforms.includes(p.id)).length })).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  const maxN = Math.max(1, ...counts.map(c=>c.n));
+  document.getElementById('an-bars').innerHTML = counts.map(c =>
+    `<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;">
+      <span class="pi-lg" style="background:${c.p.color};flex-shrink:0;">${esc(c.p.abbr)}</span>
+      <div style="flex:1;background:rgba(255,255,255,.05);border-radius:6px;height:22px;overflow:hidden;">
+        <div style="height:100%;width:${(c.n/maxN*100).toFixed(0)}%;background:linear-gradient(90deg,var(--secondary),var(--primary));border-radius:6px;min-width:8px;"></div>
+      </div>
+      <span class="mono" style="font-size:12px;width:20px;text-align:right;">${c.n}</span>
+    </div>`).join('') || '<p class="muted" style="font-size:13px;">No posts yet.</p>';
+
+  // heatmap
+  const m = bestTimeMatrix(); const flat = m.flat(); const maxH = Math.max(1, ...flat);
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; const slotNames = ['9a','11a','1p','3p','5p'];
+  let heat = '<div style="display:grid;grid-template-columns:30px repeat(5,1fr);gap:4px;">';
+  heat += '<div></div>' + slotNames.map(s=>`<div class="mono" style="font-size:10px;color:var(--text-dim);text-align:center;">${s}</div>`).join('');
+  m.forEach((row,di) => {
+    heat += `<div class="mono" style="font-size:10px;color:var(--text-dim);display:flex;align-items:center;">${dayNames[di]}</div>`;
+    row.forEach(v => { const a = (v/maxH); heat += `<div class="heat-cell" style="background:rgba(0,255,194,${(0.06+a*0.85).toFixed(2)});" title="${v.toLocaleString()} engagement"></div>`; });
+  });
+  heat += '</div>';
+  document.getElementById('an-heat').innerHTML = heat;
+
+  // top posts
+  const top = pub.map(p=>({p,e:engagementOf(p)})).sort((a,b)=>b.e.total-a.e.total).slice(0,5);
+  document.getElementById('an-top').innerHTML = top.map((t,i) =>
+    `<div style="display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;" onclick="openModal('${t.p.id}')">
+      <span class="mono" style="font-size:18px;font-weight:600;color:var(--primary);width:22px;">${i+1}</span>
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;color:#e5e5e5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.p.content.slice(0,60))}</div>
+      <div class="mono" style="font-size:11px;color:var(--text-dim);margin-top:3px;">♥ ${t.e.likes.toLocaleString()} · 💬 ${t.e.comments} · ↗ ${t.e.shares}</div></div>
+      <div class="mono" style="font-size:13px;color:var(--primary);font-weight:600;">${t.e.rate.toFixed(1)}%</div>
+    </div>`).join('') || '<p class="muted" style="font-size:13px;">Publish posts to see rankings.</p>';
+}
+function svgLine(series) {
+  const w = 460, h = 170, pad = 8;
+  const vals = series.map(s=>s.v); const max = Math.max(1, ...vals);
+  const stepX = (w - pad*2) / (series.length - 1);
+  const pts = series.map((s,i)=>[pad + i*stepX, h - pad - (s.v/max)*(h - pad*2 - 16)]);
+  const line = pts.map((p,i)=> (i?'L':'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const area = line + ` L ${pts[pts.length-1][0].toFixed(1)} ${h-pad} L ${pts[0][0].toFixed(1)} ${h-pad} Z`;
+  const grid = [0.25,0.5,0.75].map(g=>`<line x1="${pad}" y1="${(h-pad-(g)*(h-pad*2-16)).toFixed(1)}" x2="${w-pad}" y2="${(h-pad-(g)*(h-pad*2-16)).toFixed(1)}" stroke="rgba(255,255,255,.05)"/>`).join('');
+  const dots = pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.4" fill="var(--primary)"/>`).join('');
+  const labels = series.map((s,i)=> (i%3===0)?`<text x="${(pad+i*stepX).toFixed(1)}" y="${h-1}" font-size="8" fill="rgba(255,255,255,.35)" font-family="Geist,monospace" text-anchor="middle">${s.d.toLocaleDateString('en-US',{day:'numeric'})}</text>`:'').join('');
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" preserveAspectRatio="none" role="img" aria-label="Engagement line chart for the last 14 days" style="display:block;">
+    <defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(0,255,194,.28)"/><stop offset="100%" stop-color="rgba(0,255,194,0)"/></linearGradient></defs>
+    ${grid}<path d="${area}" fill="url(#lg)"/><path d="${line}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"/>${dots}${labels}
+  </svg>`;
+}
+
+// ── studio ────────────────────────────────────────────────
+function allTemplates() { return userTemplates.concat(TEMPLATES); }
+function renderStudio() {
+  const cats = ['All', ...Array.from(new Set(allTemplates().map(t=>t.cat)))];
+  const catBox = document.getElementById('studio-cats');
+  catBox.innerHTML = cats.map(c => `<button class="ftab ${studioCat===c?'active':''}" onclick="setStudioCat('${c}')">${esc(c)}</button>`).join('');
+  const grid = document.getElementById('studio-grid');
+  const items = allTemplates().filter(t => studioCat==='All' || t.cat===studioCat);
+  grid.innerHTML = '';
+  items.forEach((t,idx) => {
+    const el = document.createElement('div');
+    el.className = 'tmpl';
+    el.setAttribute('role','button'); el.setAttribute('tabindex','0');
+    el.innerHTML = `<div class="tcat">${esc(t.cat)}</div><div class="tbody">${esc(t.text)}</div><div style="margin-top:auto;display:flex;align-items:center;gap:6px;color:var(--primary);font-size:12px;font-weight:600;"><span class="material-symbols-outlined" style="font-size:15px;">edit_square</span>Use template</div>`;
+    const use = () => useTemplate(t.text);
+    el.onclick = use; el.onkeydown = e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); use(); } };
+    grid.appendChild(el);
+  });
+  if (window.PVanim) window.PVanim.stagger(grid.children);
+}
+function setStudioCat(c) { studioCat = c; renderStudio(); }
+function useTemplate(text) {
+  resetComposer();
+  document.getElementById('cmp-text').value = text;
+  switchTab('compose');
+  onComposeInput();
+  document.getElementById('cmp-text').focus();
+  toast('Template loaded — make it yours');
+}
+
+// ── pricing ───────────────────────────────────────────────
+let billing = 'monthly';
+const PLANS = [
+  { id:'creator', name:'Creator', tagline:'Best for growing creators', monthly:29, badge:'Most popular', featured:false,
+    features:[
+      { t:'Manage up to 15 accounts', bold:true },
+      { t:'Multiple accounts per platform' },
+      { t:'Unlimited posts' },
+      { t:'Schedule posts & calendar planning' },
+      { t:'Per-platform text customization' },
+      { t:'Image & video uploads' },
+      { t:'Content Studio & templates' },
+      { t:'Analytics dashboard' },
+      { t:'Best-time suggestions' },
+      { t:'Human support' },
+    ] },
+  { id:'growth', name:'Growth', tagline:'Best for growing teams & agencies', monthly:49, badge:'', featured:false,
+    features:[
+      { t:'Manage up to 50 accounts', bold:true },
+      { t:'Multiple accounts per platform' },
+      { t:'Unlimited posts' },
+      { t:'Schedule posts & calendar planning' },
+      { t:'Bulk video scheduling' },
+      { t:'Drag & drop rescheduling' },
+      { t:'Content Studio & templates' },
+      { t:'Advanced analytics & CSV export' },
+      { t:'Viral growth consulting' },
+      { t:'Priority human support' },
+      { t:'Invite team members' },
+    ] },
+  { id:'pro', name:'Pro', tagline:'Best for scaling brands', monthly:99, badge:'Best deal', featured:true,
+    features:[
+      { t:'Manage unlimited accounts', bold:true },
+      { t:'Multiple accounts per platform' },
+      { t:'Unlimited posts' },
+      { t:'Schedule posts & calendar planning' },
+      { t:'Bulk video scheduling' },
+      { t:'Drag & drop rescheduling' },
+      { t:'Content Studio & templates' },
+      { t:'Advanced analytics & CSV export' },
+      { t:'Viral growth consulting' },
+      { t:'Priority support + dedicated manager' },
+      { t:'Invite unlimited team members' },
+    ] },
+];
+function setBilling(mode) {
+  billing = mode;
+  document.getElementById('bill-monthly').classList.toggle('active', mode==='monthly');
+  document.getElementById('bill-yearly').classList.toggle('active', mode==='yearly');
+  document.getElementById('bill-monthly').setAttribute('aria-pressed', String(mode==='monthly'));
+  document.getElementById('bill-yearly').setAttribute('aria-pressed', String(mode==='yearly'));
+  renderPricing();
+}
+function renderPricing() {
+  const grid = document.getElementById('pricing-grid');
+  grid.innerHTML = '';
+  PLANS.forEach(p => {
+    const perMonth = billing==='yearly' ? Math.round(p.monthly * 10 / 12) : p.monthly;   // 2 months free ≈ 17% off
+    const annual = p.monthly * 10;
+    const sub = billing==='yearly'
+      ? `<div class="mono" style="font-size:12px;color:var(--primary);margin-top:6px;">$${annual} billed yearly · save 17%</div>`
+      : `<div class="mono" style="font-size:12px;color:var(--text-dim);margin-top:6px;">Billed monthly</div>`;
+    const card = document.createElement('div');
+    card.className = 'plan' + (p.featured ? ' featured' : '');
+    card.innerHTML =
+      `<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+         <h3 style="font-weight:700;font-size:20px;">${esc(p.name)}</h3>
+         ${p.badge ? `<span class="plan-badge">${esc(p.badge)}</span>` : ''}
+       </div>
+       <p class="muted" style="font-size:13px;margin-bottom:18px;">${esc(p.tagline)}</p>
+       <div style="display:flex;align-items:flex-end;gap:6px;">
+         <span style="font-family:'Plus Jakarta Sans';font-weight:800;font-size:40px;line-height:1;">$${perMonth}</span>
+         <span class="muted" style="font-size:14px;margin-bottom:5px;">/month</span>
+       </div>
+       ${sub}
+       <div style="margin:22px 0;flex:1;">
+         ${p.features.map(f => `<div class="plan-feat${f.bold?' bold':''}"><span class="material-symbols-outlined">check_circle</span><span>${esc(f.t)}</span></div>`).join('')}
+       </div>
+       <button class="${p.featured ? 'btn-p' : 'btn-o'}" style="padding:12px;font-size:14px;justify-content:center;width:100%;" onclick="startTrial('${esc(p.name)}')">Start 7-day free trial <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span></button>
+       <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;color:var(--text-dim);font-size:12px;"><span class="material-symbols-outlined" style="font-size:14px;color:var(--green);">verified_user</span>$0.00 due today, cancel anytime</div>`;
+    grid.appendChild(card);
+  });
+  // "Post to:" platform icons
+  document.getElementById('pricing-platforms').innerHTML = PLATFORMS.map(p => `<span class="pi-lg" style="background:${p.color}" title="${esc(p.name)}">${esc(p.abbr)}</span>`).join('');
+  if (window.PVanim) window.PVanim.stagger(grid.children);
+}
+function startTrial(plan) { toast(plan + ' — 7-day free trial started (demo)'); }
+
+// ── accounts ──────────────────────────────────────────────
+function renderAccounts() {
+  const box = document.getElementById('accounts-list');
+  box.innerHTML = '';
+  PLATFORMS.forEach(p => {
+    const on = !!accounts[p.id];
+    const row = document.createElement('div');
+    row.className = 'arow';
+    const count = posts.filter(x=>x.platforms.includes(p.id)).length;
+    row.innerHTML =
+      `<div class="pi-lg" style="width:40px;height:40px;border-radius:10px;font-size:15px;background:${p.color}">${esc(p.abbr)}</div>
+       <div style="flex:1;">
+         <div style="font-weight:600;font-size:15px;">${esc(p.name)}</div>
+         <div class="mono" style="font-size:11px;color:${on?'var(--primary)':'var(--text-dim)'};">${on?('Connected · '+count+' posts'):'Not connected'}</div>
+       </div>
+       <button class="toggle ${on?'on':''}" onclick="toggleAccount('${p.id}')" role="switch" aria-checked="${on}" aria-label="Toggle ${esc(p.name)}"><span class="knob"></span></button>`;
+    box.appendChild(row);
+  });
+  if (window.PVanim) window.PVanim.stagger(box.children);
+}
+function toggleAccount(id) {
+  accounts[id] = !accounts[id];
+  if (!accounts[id]) selected.delete(id);
+  save(); renderStats(); renderAccounts();
+  toast(accounts[id] ? pById(id).name + ' connected' : pById(id).name + ' disconnected');
+}
+
+// ── settings ──────────────────────────────────────────────
+function renderSettings() {
+  document.getElementById('set-brand').value = settings.brand || '';
+  document.getElementById('set-handle').value = settings.handle || '';
+  document.getElementById('set-time').value = settings.defaultTime || '10:00';
+  const box = document.getElementById('set-defaults');
+  box.innerHTML = '';
+  PLATFORMS.forEach(p => {
+    const on = (settings.defaultPlatforms || []).includes(p.id);
+    const chip = document.createElement('div');
+    chip.className = 'pchip' + (on ? ' sel' : '');
+    chip.setAttribute('role','button'); chip.setAttribute('tabindex','0'); chip.setAttribute('aria-pressed', String(on));
+    chip.innerHTML = `<span class="pi" style="background:${p.color}">${esc(p.abbr)}</span>${esc(p.name)}`;
+    const toggle = () => {
+      const arr = new Set(settings.defaultPlatforms || []);
+      arr.has(p.id) ? arr.delete(p.id) : arr.add(p.id);
+      settings.defaultPlatforms = [...arr]; save(); renderSettings();
+    };
+    chip.onclick = toggle; chip.onkeydown = e => { if (e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } };
+    box.appendChild(chip);
+  });
+}
+function onSettingsInput() {
+  settings.brand = document.getElementById('set-brand').value;
+  settings.handle = document.getElementById('set-handle').value.replace(/^@/,'');
+  settings.defaultTime = document.getElementById('set-time').value;
+  save();
+}
+function exportData() {
+  const blob = new Blob([JSON.stringify({ posts, accounts, settings, userTemplates }, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'postvias-backup.json';
+  a.click(); URL.revokeObjectURL(a.href); toast('Backup downloaded');
+}
+function importData(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (data.posts) posts = data.posts;
+      if (data.accounts) accounts = data.accounts;
+      if (data.settings) settings = data.settings;
+      if (data.userTemplates) userTemplates = data.userTemplates;
+      save(); renderStats(); renderSettings(); toast('Data imported');
+    } catch(e) { toast('Invalid file', true); }
+  };
+  reader.readAsText(file); ev.target.value = '';
+}
+function confirmReset() {
+  showConfirm('Reset the demo?', 'All your posts and settings will be cleared and the sample data reloaded.', () => {
+    localStorage.removeItem('postvias_posts'); localStorage.removeItem('postvias_accounts');
+    localStorage.removeItem('postvias_settings'); localStorage.removeItem('postvias_templates');
+    seed(); renderStats(); renderSettings(); switchTab('compose'); toast('Demo reset');
+  });
+}
+
+// ── post detail modal ─────────────────────────────────────
+function openModal(id) {
+  const p = posts.find(x => x.id===id); if (!p) return;
+  modalPostId = id;
+  lastFocus = document.activeElement;
+  document.getElementById('pm-title').textContent = p.status.charAt(0).toUpperCase()+p.status.slice(1)+' Post';
+  const icons = p.platforms.map(pid => { const pl=pById(pid); return `<span class="pi-lg" style="background:${pl.color}">${esc(pl.abbr)}</span>`; }).join('');
+  const when = p.scheduledAt ? new Date(p.scheduledAt).toLocaleString('en-US',{ weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'No date';
+  const eng = p.status==='published' ? engagementOf(p) : null;
+  document.getElementById('pm-body').innerHTML =
+    `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">${statusBadge(p.status)}<span class="mono" style="font-size:12px;color:var(--text-dim);">${esc(when)}</span></div>
+     <div style="display:flex;gap:5px;margin-bottom:14px;">${icons}</div>
+     ${p.media ? (isVideo(p.media, p.mediaType)
+        ? `<video src="${esc(p.media)}" controls muted playsinline style="width:100%;border-radius:8px;margin-bottom:12px;max-height:240px;"></video>`
+        : `<img src="${esc(p.media)}" alt="" style="width:100%;border-radius:8px;margin-bottom:12px;max-height:200px;object-fit:cover;" onerror="this.style.display='none'"/>`) : ''}
+     <div style="font-size:14px;line-height:1.6;color:#e5e5e5;white-space:pre-wrap;">${esc(p.content)}</div>
+     ${eng ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;text-align:center;">
+        ${[['Reach',eng.reach],['Likes',eng.likes],['Comments',eng.comments],['Shares',eng.shares]].map(([l,v])=>`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:8px 4px;"><div style="font-weight:700;font-size:15px;color:var(--primary);">${v.toLocaleString()}</div><div class="mono" style="font-size:10px;color:var(--text-dim);">${l}</div></div>`).join('')}
+     </div>` : ''}`;
+  const modal = document.getElementById('post-modal');
+  modal.classList.add('open');
+  if (window.PVanim) window.PVanim.modalIn(modal.querySelector('.modal'));
+}
+function closeModal() { document.getElementById('post-modal').classList.remove('open'); modalPostId = null; restoreFocus(); }
+function editFromModal() { const id = modalPostId; closeModal(); editPost(id); }
+function deleteFromModal() { const id = modalPostId; closeModal(); removePost(id); }
+function restoreFocus() { if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch(e){} } lastFocus = null; }
+
+// ── confirm dialog ────────────────────────────────────────
+function showConfirm(title, msg, onOk) {
+  document.getElementById('cf-title').textContent = title;
+  document.getElementById('cf-msg').textContent = msg;
+  confirmAction = onOk;
+  lastFocus = document.activeElement;
+  const modal = document.getElementById('confirm-modal');
+  modal.classList.add('open');
+  if (window.PVanim) window.PVanim.modalIn(modal.querySelector('.modal'));
+  document.getElementById('cf-ok').focus();
+}
+function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); confirmAction = null; restoreFocus(); }
+document.getElementById('cf-ok').addEventListener('click', () => { const a = confirmAction; closeConfirm(); if (a) a(); });
+
+// ── toast ─────────────────────────────────────────────────
+let toastT;
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  const ic = t.querySelector('.material-symbols-outlined');
+  ic.textContent = isErr ? 'error' : 'check_circle';
+  ic.style.color = isErr ? 'var(--red)' : 'var(--primary)';
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── overlay / keyboard handling ───────────────────────────
+document.getElementById('post-modal').addEventListener('click', e => { if (e.target.id==='post-modal') closeModal(); });
+document.getElementById('confirm-modal').addEventListener('click', e => { if (e.target.id==='confirm-modal') closeConfirm(); });
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') { closeModal(); closeConfirm(); const cc=document.getElementById('cmp-cal'); if (cc) cc.style.display='none'; return; }
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if (typing) return;
+  if (e.key==='/') { e.preventDefault(); switchTab('content'); setTimeout(()=>document.getElementById('content-search').focus(),0); return; }
+  if (e.key.toLowerCase()==='n') { newPost(); return; }
+  const idx = parseInt(e.key,10);
+  if (idx>=1 && idx<=6) switchTab(['compose','calendar','content','analytics','studio','accounts'][idx-1]);
+});
+
+// ── tablist keyboard navigation (ARIA tabs pattern) ───────
+const tablistEl = document.querySelector('nav[role="tablist"]');
+function updateTabRoving() {
+  tablistEl.querySelectorAll('.tabbtn').forEach(b => b.tabIndex = b.getAttribute('aria-selected')==='true' ? 0 : -1);
+}
+tablistEl.addEventListener('keydown', e => {
+  const tabs = [...tablistEl.querySelectorAll('.tabbtn')];
+  let i = tabs.indexOf(document.activeElement); if (i < 0) return;
+  if (e.key==='ArrowRight' || e.key==='ArrowLeft') { e.preventDefault(); i = (i + (e.key==='ArrowRight'?1:-1) + tabs.length) % tabs.length; tabs[i].focus(); }
+  else if (e.key==='Home') { e.preventDefault(); tabs[0].focus(); }
+  else if (e.key==='End') { e.preventDefault(); tabs[tabs.length-1].focus(); }
+  else if (e.key==='Enter' || e.key===' ') { e.preventDefault(); tabs[i].click(); }
+});
+
+// ── init ──────────────────────────────────────────────────
+load();
+renderStats();
+resetComposer();
+renderQuickInsert();
+updateTabRoving();
+</script>
+
+<!-- ── Motion: animations (CDN ESM, no build). Honors reduced-motion (opacity-only). ── -->
+<script type="module">
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const move = !reduce;
+let A = null;
+try { A = await import('https://cdn.jsdelivr.net/npm/motion@12/+esm'); } catch (e) { A = null; }
+const EASE = [0.22, 1, 0.36, 1];
+window.PVanim = {
+  reduce, ready: !!A,
+  enter(el) { if (!A || !el) return; A.animate(el, move ? { opacity:[0,1], y:[10,0] } : { opacity:[0,1] }, { duration: move?0.32:0.3, ease: EASE }); },
+  stagger(nodes) {
+    if (!A || !nodes || !nodes.length) return;
+    A.animate([...nodes], move ? { opacity:[0,1], y:[12,0] } : { opacity:[0,1] }, { duration: move?0.4:0.35, delay: A.stagger(move?0.04:0.03), ease: EASE });
+  },
+  modalIn(el) {
+    if (!A || !el) return;
+    requestAnimationFrame(() => A.animate(el, move ? { opacity:[0,1], scale:[0.94,1] } : { opacity:[0,1] }, { duration: move?0.26:0.22, ease: EASE }));
+  }
+};
+if (A && move) {
+  A.press('.btn-p, .btn-o, .tabbtn, .tmpl', (el) => {
+    A.animate(el, { scale: 0.97 }, { duration: 0.1, ease: 'easeOut' });
+    return () => A.animate(el, { scale: 1 }, { type: 'spring', stiffness: 500, damping: 22 });
+  });
+}
+</script>
+</body>
+</html>
