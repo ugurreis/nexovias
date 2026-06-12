@@ -310,16 +310,26 @@ select.inp { appearance: none; cursor: pointer; }
           <button class="btn-g" style="padding:0 14px;white-space:nowrap;" onclick="useSampleImg()">Sample</button>
         </div>
 
-        <!-- AI caption generator -->
+        <!-- AI caption + image generator -->
         <div id="cmp-ai" style="margin-top:14px;border:1px solid var(--border-active);border-radius:12px;padding:14px;background:rgba(0,255,194,.03);">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
             <span class="material-symbols-outlined" style="font-size:18px;color:var(--primary);">auto_awesome</span>
-            <span class="slabel" style="margin:0;">AI Caption</span>
-            <span class="mono" style="font-size:11px;color:var(--text-dim);">paste a link or add an image — AI writes the post, ready to publish</span>
+            <span class="slabel" style="margin:0;">AI Studio</span>
+            <span class="mono" style="font-size:11px;color:var(--text-dim);">paste a link, add media, or describe a visual — AI writes the post and creates the image</span>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <input id="cmp-link" class="inp" style="flex:1;min-width:180px;" placeholder="Paste an article / product link (optional)" aria-label="Link to generate a caption from" onkeydown="if(event.key==='Enter'){event.preventDefault();aiGenerate();}"/>
-            <button id="cmp-ai-btn" class="btn-p" style="padding:0 16px;white-space:nowrap;" onclick="aiGenerate()"><span class="material-symbols-outlined" style="font-size:16px;">auto_awesome</span>Generate</button>
+            <button id="cmp-ai-btn" class="btn-p" style="padding:0 16px;white-space:nowrap;" onclick="aiGenerate()"><span class="material-symbols-outlined" style="font-size:16px;">auto_awesome</span>Write caption</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            <input id="cmp-img-prompt" class="inp" style="flex:1;min-width:160px;" placeholder="Describe an image for AI to create (optional)" aria-label="Image generation prompt" onkeydown="if(event.key==='Enter'){event.preventDefault();aiImage();}"/>
+            <select id="cmp-img-ratio" class="inp" style="width:130px;flex:0 0 auto;" aria-label="Image aspect ratio">
+              <option value="square">Square 1:1</option>
+              <option value="portrait">Portrait 4:5</option>
+              <option value="story">Story 9:16</option>
+              <option value="landscape">Landscape 4:3</option>
+            </select>
+            <button id="cmp-img-btn" class="btn-o" style="padding:0 14px;white-space:nowrap;" onclick="aiImage()"><span class="material-symbols-outlined" style="font-size:16px;">image</span>Create image</button>
           </div>
           <div id="cmp-ai-status" class="mono" style="font-size:11px;color:var(--text-dim);margin-top:8px;display:none;"></div>
         </div>
@@ -710,7 +720,7 @@ let lastFocus = null;       // element to restore focus to after a dialog closes
 let analyticsLoaded = false;
 
 // ── storage ───────────────────────────────────────────────
-function save() {
+function saveLocal() {
   try {
     localStorage.setItem('postvias_posts', JSON.stringify(posts));
     localStorage.setItem('postvias_accounts', JSON.stringify(accounts));
@@ -721,6 +731,9 @@ function save() {
     toast('Storage full — uploaded media may be too large to persist', true);
   }
 }
+// save() = local persistence + (best-effort) cloud sync. Cloud-loaded data
+// uses saveLocal() directly so it doesn't echo straight back to the server.
+function save() { saveLocal(); if (typeof cloudPushAll === 'function') cloudPushAll(); }
 function uid() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 // Stable pseudo-random in [0,1) seeded by a string — keeps analytics consistent.
@@ -769,6 +782,59 @@ function load() {
   if (!posts || !Array.isArray(accounts)) seed();   // re-seed if missing or old (object) format
   if (!settings) { settings = defaultSettings(); save(); }
   if (!settings.plan) settings.plan = 'creator';
+}
+
+// ── backend (optional Netlify Functions) ──────────────────
+// Real AI + persistence behind same-origin functions. Every call degrades
+// gracefully: on file://, a 503 (key not set), or any network error, the app
+// keeps using its on-device generators and localStorage. Keys live only on the
+// server — the browser never sees them.
+const API_BASE = location.protocol.startsWith('http') ? '/.netlify/functions' : null;
+const WS = 'demo';   // workspace id for cloud sync
+const backend = { caption: API_BASE ? 'unknown' : 'off', image: API_BASE ? 'unknown' : 'off', posts: API_BASE ? 'unknown' : 'off' };
+async function apiCall(fn, { method = 'POST', body = null, query = '' } = {}) {
+  if (!API_BASE) return { configured: false };
+  try {
+    const res = await fetch(API_BASE + '/' + fn + query, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 503) return { configured: false };
+    if (!res.ok) return { configured: true, ok: false, status: res.status };
+    return { configured: true, ok: true, data: await res.json() };
+  } catch (e) {
+    return { configured: false, error: String(e) };
+  }
+}
+let cloudTimer = null;
+function cloudPushAll() {
+  if (!API_BASE || backend.posts === 'no') return;
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(async () => {
+    // Keep cloud rows lean: drop large uploaded data: URLs (AI/hosted URLs stay).
+    const slim = posts.map(p => (p.media && p.media.startsWith('data:') && p.media.length > 100000) ? { ...p, media: '' } : p);
+    const r = await apiCall('posts', { body: { posts: slim }, query: '?ws=' + WS });
+    backend.posts = (r.configured && r.ok) ? 'yes' : 'no';
+  }, 900);
+}
+async function cloudLoad() {
+  if (!API_BASE) return;
+  const r = await apiCall('posts', { method: 'GET', query: '?ws=' + WS });
+  if (r.configured && r.ok && r.data && Array.isArray(r.data.posts)) {
+    backend.posts = 'yes';
+    if (r.data.posts.length) {           // cloud is source of truth when it has data
+      posts = r.data.posts; saveLocal(); renderStats(); rerenderCurrent();
+    } else {
+      cloudPushAll();                    // first run: seed the cloud from local
+    }
+  } else {
+    backend.posts = 'no';
+  }
+}
+function rerenderCurrent() {
+  const cur = TABS.find(t => { const el = document.getElementById('tab-' + t); return el && el.style.display !== 'none'; }) || 'compose';
+  switchTab(cur);
 }
 
 // ── engagement model (deterministic, demo) ────────────────
@@ -948,29 +1014,82 @@ async function aiGenerate() {
   if (btn.disabled) return;
   const orig = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined pv-spin" style="font-size:16px;">progress_activity</span>Generating…';
+  btn.innerHTML = '<span class="material-symbols-outlined pv-spin" style="font-size:16px;">progress_activity</span>Writing…';
   status.style.display = 'block'; status.style.color = 'var(--text-dim)';
-  const steps = link ? ['Reading the link…', 'Pulling the key points…', 'Writing your caption…']
-              : hasMedia ? ['Looking at your image…', 'Finding the best angle…', 'Writing your caption…']
-              : ['Reading your topic…', 'Writing your caption…'];
-  for (const s of steps) { status.textContent = s; await sleep(420); }
 
-  const caption = buildAICaption(link, hasMedia, existing);
-  document.getElementById('cmp-text').value = caption;
-
-  // Auto-select platforms so the post is ready to publish straight away
+  // Auto-select platforms first so the model can tailor + the post is ready to publish.
   if (selected.size === 0) {
     const def = (settings.defaultPlatforms || []).filter(isPlatformConnected);
     const pool = def.length ? def : PLATFORMS.filter(p => isPlatformConnected(p.id)).map(p => p.id);
     pool.slice(0, 3).forEach(id => selected.add(id));
     renderComposePlatforms();
   }
+
+  // Try the real model (OpenAI via Netlify Function); fall back on-device.
+  status.textContent = link ? 'Reading the link…' : hasMedia ? 'Looking at your media…' : 'Writing with AI…';
+  let caption = null, viaAI = false;
+  const r = await apiCall('generate-caption', { body: {
+    link, hasMedia, topic: existing, brand: settings.brand, handle: settings.handle, platforms: [...selected]
+  } });
+  if (r.configured && r.ok && r.data && r.data.caption) { caption = r.data.caption.trim(); viaAI = true; backend.caption = 'yes'; }
+  else {
+    backend.caption = r.configured ? 'no' : 'off';
+    await sleep(450);                       // small beat so the fallback doesn't feel instant
+    caption = buildAICaption(link, hasMedia, existing);
+  }
+
+  document.getElementById('cmp-text').value = caption;
   onComposeInput();
 
   btn.disabled = false; btn.innerHTML = orig;
-  status.innerHTML = '<span style="color:var(--primary);">✓ AI draft ready — review it, then Post Now or Schedule.</span>';
-  toast('✨ AI caption ready to publish');
+  status.innerHTML = viaAI
+    ? '<span style="color:var(--primary);">✓ Written by AI — review, then Post Now or Schedule.</span>'
+    : '<span style="color:var(--primary);">✓ Draft ready — review, then Post Now or Schedule.</span>';
+  toast(viaAI ? '✨ AI caption ready' : '✨ Caption ready to publish');
   document.getElementById('cmp-text').focus();
+}
+// ── AI image generation (fal.ai / FLUX via Netlify Function) ──
+async function aiImage() {
+  const btn = document.getElementById('cmp-img-btn');
+  const status = document.getElementById('cmp-ai-status');
+  if (btn.disabled) return;
+  if (!API_BASE) { toast('AI image needs the backend — see BACKEND_SETUP.md', true); return; }
+
+  let prompt = document.getElementById('cmp-img-prompt').value.trim();
+  if (!prompt) {                              // derive a prompt from the caption / link
+    const capTxt = document.getElementById('cmp-text').value.trim();
+    const link = document.getElementById('cmp-link').value.trim();
+    const base = capTxt ? capTxt.replace(/#[\w]+/g, '').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim().slice(0, 200)
+               : link ? topicFromLink(link).phrase : '';
+    if (base) prompt = 'High-quality social media visual, modern, clean, professional — ' + base;
+  }
+  if (!prompt) { toast('Describe an image, or write a caption first', true); return; }
+
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined pv-spin" style="font-size:16px;">progress_activity</span>Creating…';
+  status.style.display = 'block'; status.style.color = 'var(--text-dim)';
+  status.textContent = 'Generating image with AI (fal.ai · FLUX)…';
+
+  const ratio = document.getElementById('cmp-img-ratio').value;
+  const r = await apiCall('generate-image', { body: { prompt, ratio } });
+  btn.disabled = false; btn.innerHTML = orig;
+
+  if (r.configured && r.ok && r.data && r.data.imageUrl) {
+    cmpMedia = r.data.imageUrl; cmpMediaType = 'image';
+    document.getElementById('cmp-media').value = '';
+    renderMediaPreview(); renderPreviews();
+    backend.image = 'yes';
+    status.innerHTML = '<span style="color:var(--primary);">✓ AI image added — ready to publish.</span>';
+    toast('✨ AI image created');
+  } else if (!r.configured) {
+    backend.image = 'off';
+    status.innerHTML = '<span style="color:var(--amber);">AI image needs the fal.ai key on the backend (see BACKEND_SETUP.md).</span>';
+    toast('Image backend not configured', true);
+  } else {
+    status.innerHTML = '<span style="color:var(--red);">Image generation failed — try again.</span>';
+    toast('Image generation failed', true);
+  }
 }
 function buildAICaption(link, hasMedia, existing) {
   // Pick a deterministic-ish variant based on available signal
@@ -1159,6 +1278,7 @@ function resetComposer() {
   document.getElementById('cmp-media').value = '';
   document.getElementById('cmp-file').value = '';
   document.getElementById('cmp-link').value = '';
+  const imgPrompt = document.getElementById('cmp-img-prompt'); if (imgPrompt) imgPrompt.value = '';
   const aiStatus = document.getElementById('cmp-ai-status'); if (aiStatus) { aiStatus.style.display = 'none'; aiStatus.textContent = ''; }
   renderMediaPreview();
   document.getElementById('cmp-cal').style.display = 'none';
@@ -1866,6 +1986,7 @@ renderStats();
 resetComposer();
 renderQuickInsert();
 updateTabRoving();
+cloudLoad();   // best-effort: pull cloud posts if Supabase is configured
 </script>
 
 <!-- ── Motion: animations (CDN ESM, no build). Honors reduced-motion (opacity-only). ── -->
