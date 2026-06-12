@@ -310,6 +310,20 @@ select.inp { appearance: none; cursor: pointer; }
           <button class="btn-g" style="padding:0 14px;white-space:nowrap;" onclick="useSampleImg()">Sample</button>
         </div>
 
+        <!-- AI caption generator -->
+        <div id="cmp-ai" style="margin-top:14px;border:1px solid var(--border-active);border-radius:12px;padding:14px;background:rgba(0,255,194,.03);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <span class="material-symbols-outlined" style="font-size:18px;color:var(--primary);">auto_awesome</span>
+            <span class="slabel" style="margin:0;">AI Caption</span>
+            <span class="mono" style="font-size:11px;color:var(--text-dim);">paste a link or add an image — AI writes the post, ready to publish</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input id="cmp-link" class="inp" style="flex:1;min-width:180px;" placeholder="Paste an article / product link (optional)" aria-label="Link to generate a caption from" onkeydown="if(event.key==='Enter'){event.preventDefault();aiGenerate();}"/>
+            <button id="cmp-ai-btn" class="btn-p" style="padding:0 16px;white-space:nowrap;" onclick="aiGenerate()"><span class="material-symbols-outlined" style="font-size:16px;">auto_awesome</span>Generate</button>
+          </div>
+          <div id="cmp-ai-status" class="mono" style="font-size:11px;color:var(--text-dim);margin-top:8px;display:none;"></div>
+        </div>
+
         <hr class="div" style="margin:22px 0;">
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -873,6 +887,115 @@ function renderVariants() {
 function onVariantInput(id, val) { if (val.trim()==='') delete variants[id]; else variants[id] = val; onComposeInput(); }
 function textFor(id, baseText) { return (variants[id] != null && variants[id].trim() !== '') ? variants[id] : baseText; }
 
+// ── AI caption generator (demo: deterministic, on-device) ──
+// No external API/key (static site). Derives a topic from the pasted link
+// or the attached media and assembles an on-brand, platform-ready caption.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const cap1 = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const AI_LINK_HOOKS = [
+  t => `Just published: ${t}. Worth your next 2 minutes 👇`,
+  t => `We went deep on ${t} so you don't have to. Here's the short version.`,
+  t => `${cap1(t)}, broken down without the fluff 🧵`,
+  t => `The one thing most people get wrong about ${t}.`,
+  t => `New drop on ${t} — and it's a good one. 👀`,
+];
+const AI_IMG_HOOKS = [
+  'A little behind-the-scenes for you 📸 What stands out to you?',
+  'Sometimes a single frame says it all. ✨',
+  'Caught this and had to share it. 🔥 Thoughts?',
+  'New visual — tell us what you see in the comments 👇',
+  'Less talk, more show. Here\'s what we\'ve been working on. 🎯',
+];
+const AI_BODY = [
+  'Real value, zero fluff — exactly what you came here for.',
+  'Save this, send it to a teammate, and tell us what clicks.',
+  'We broke it down so you can put it to work today.',
+  'Honest, practical, and straight to the point.',
+];
+const AI_CTA_LINK = ['Full story in the link 👉', 'Tap through and dive in.', 'Read it, then come back and tell us what you think 👇', 'Link below — don\'t sleep on this one.'];
+// Map common topic words to a relevant hashtag set
+function pickHashtags(words) {
+  const blob = words.join(' ').toLowerCase();
+  const sets = [
+    { k:['ai','automation','model','gpt','ml','agent'], h:'#AI #automation' },
+    { k:['market','growth','sales','revenue','lead','seo'], h:'#marketing #growth' },
+    { k:['startup','founder','build','launch','product'], h:'#startup #buildinpublic' },
+    { k:['design','ux','ui','brand','creative'], h:'#design #creative' },
+    { k:['content','social','post','reel','video','creator'], h:'#contentcreator #socialmedia' },
+    { k:['tip','guide','how','learn','productivity'], h:'#productivity #tips' },
+  ];
+  const hit = sets.find(s => s.k.some(w => blob.includes(w)));
+  return hit ? hit.h : HASHTAG_GROUPS[(words.length || 0) % HASHTAG_GROUPS.length];
+}
+function topicFromLink(url) {
+  try {
+    const u = new URL(/^https?:\/\//i.test(url) ? url : 'https://' + url);
+    const host = u.hostname.replace(/^www\./, '').split('.')[0];
+    const raw = (u.pathname + ' ' + u.search).replace(/[-_/?=&.]+/g, ' ');
+    const words = raw.split(/\s+/).filter(w => w.length > 2 && !/^\d+$/.test(w) && !/^(html|php|index|aspx|utm|amp)$/i.test(w));
+    const phrase = words.slice(0, 5).join(' ').trim();
+    return { host, words, phrase: phrase || host };
+  } catch (e) { return { host:'', words:[], phrase:'' }; }
+}
+async function aiGenerate() {
+  const link = document.getElementById('cmp-link').value.trim();
+  const hasMedia = !!cmpMedia;
+  const existing = document.getElementById('cmp-text').value.trim();
+  if (!link && !hasMedia && !existing) { toast('Add a link or an image first — AI writes the post from it', true); return; }
+
+  const btn = document.getElementById('cmp-ai-btn');
+  const status = document.getElementById('cmp-ai-status');
+  if (btn.disabled) return;
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined pv-spin" style="font-size:16px;">progress_activity</span>Generating…';
+  status.style.display = 'block'; status.style.color = 'var(--text-dim)';
+  const steps = link ? ['Reading the link…', 'Pulling the key points…', 'Writing your caption…']
+              : hasMedia ? ['Looking at your image…', 'Finding the best angle…', 'Writing your caption…']
+              : ['Reading your topic…', 'Writing your caption…'];
+  for (const s of steps) { status.textContent = s; await sleep(420); }
+
+  const caption = buildAICaption(link, hasMedia, existing);
+  document.getElementById('cmp-text').value = caption;
+
+  // Auto-select platforms so the post is ready to publish straight away
+  if (selected.size === 0) {
+    const def = (settings.defaultPlatforms || []).filter(isPlatformConnected);
+    const pool = def.length ? def : PLATFORMS.filter(p => isPlatformConnected(p.id)).map(p => p.id);
+    pool.slice(0, 3).forEach(id => selected.add(id));
+    renderComposePlatforms();
+  }
+  onComposeInput();
+
+  btn.disabled = false; btn.innerHTML = orig;
+  status.innerHTML = '<span style="color:var(--primary);">✓ AI draft ready — review it, then Post Now or Schedule.</span>';
+  toast('✨ AI caption ready to publish');
+  document.getElementById('cmp-text').focus();
+}
+function buildAICaption(link, hasMedia, existing) {
+  // Pick a deterministic-ish variant based on available signal
+  const seed = (link.length + (existing.length * 3) + (hasMedia ? 7 : 0));
+  let topicWords = [];
+  let lines = [];
+  if (link) {
+    const t = topicFromLink(link);
+    topicWords = t.words.length ? t.words : (existing ? existing.split(/\s+/) : [t.host]);
+    const hook = AI_LINK_HOOKS[seed % AI_LINK_HOOKS.length];
+    lines.push(hook(t.phrase || t.host || 'this'));
+    lines.push(AI_BODY[seed % AI_BODY.length]);
+    lines.push(AI_CTA_LINK[seed % AI_CTA_LINK.length] + ' ' + link);
+  } else if (hasMedia) {
+    topicWords = existing ? existing.split(/\s+/) : ['content','creator'];
+    lines.push(AI_IMG_HOOKS[seed % AI_IMG_HOOKS.length]);
+    lines.push(AI_BODY[(seed + 1) % AI_BODY.length]);
+  } else {
+    topicWords = existing.split(/\s+/);
+    lines.push(`${cap1(existing.slice(0, 60))} — here's what you need to know 👇`);
+    lines.push(AI_BODY[seed % AI_BODY.length]);
+  }
+  return lines.join('\n\n') + '\n\n' + pickHashtags(topicWords);
+}
+
 function renderPreviews() {
   const txt = document.getElementById('cmp-text').value;
   const media = cmpMedia;
@@ -933,6 +1056,7 @@ function setMediaFromFile(file) {
     document.getElementById('cmp-media').value = '';
     renderMediaPreview(); renderPreviews();
     toast((cmpMediaType==='video' ? 'Video' : 'Image') + ' added');
+    autoAIFromMedia();
   };
   reader.onerror = () => toast('Could not read file', true);
   reader.readAsDataURL(file);
@@ -954,7 +1078,15 @@ function renderMediaPreview() {
     : `<img src="${esc(cmpMedia)}" alt="" onerror="this.style.display='none'"/>`;
   prev.innerHTML = inner + `<button class="media-remove" onclick="event.stopPropagation();clearMedia()" aria-label="Remove media"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>`;
 }
-function useSampleImg() { cmpMedia = SAMPLE_IMG; cmpMediaType = 'image'; document.getElementById('cmp-media').value = ''; renderMediaPreview(); renderPreviews(); }
+function useSampleImg() { cmpMedia = SAMPLE_IMG; cmpMediaType = 'image'; document.getElementById('cmp-media').value = ''; renderMediaPreview(); renderPreviews(); autoAIFromMedia(); }
+// When media is added and there's no caption yet, let AI draft one automatically
+// so the post sits ready to publish. Skipped if the user already wrote something.
+function autoAIFromMedia() {
+  if (document.getElementById('tab-compose').style.display === 'none') return;
+  if (document.getElementById('cmp-text').value.trim()) return;
+  if (document.getElementById('cmp-link').value.trim()) return;  // a link present → user can click Generate
+  aiGenerate();
+}
 
 // ── schedule date <-> inline calendar picker ──────────────
 function setSchedDate(iso) {
@@ -1026,6 +1158,8 @@ function resetComposer() {
   cmpMedia = ''; cmpMediaType = '';
   document.getElementById('cmp-media').value = '';
   document.getElementById('cmp-file').value = '';
+  document.getElementById('cmp-link').value = '';
+  const aiStatus = document.getElementById('cmp-ai-status'); if (aiStatus) { aiStatus.style.display = 'none'; aiStatus.textContent = ''; }
   renderMediaPreview();
   document.getElementById('cmp-cal').style.display = 'none';
   setSchedDate('');
