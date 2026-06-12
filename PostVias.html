@@ -116,7 +116,7 @@ select.inp { appearance: none; cursor: pointer; }
 .calgrid { display: grid; grid-template-columns: 56px repeat(7, 1fr); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); }
 .calhead { padding: 10px 6px; text-align: center; border-bottom: 1px solid var(--border); border-left: 1px solid rgba(255,255,255,.04); font-size: 12px; }
 .calhead.today { background: rgba(0,255,194,.06); }
-.calcell { min-height: 64px; border-bottom: 1px solid rgba(255,255,255,.04); border-left: 1px solid rgba(255,255,255,.04); padding: 4px; cursor: pointer; transition: background .15s; position: relative; }
+.calcell { min-height: 52px; border-bottom: 1px solid rgba(255,255,255,.04); border-left: 1px solid rgba(255,255,255,.04); padding: 4px; cursor: pointer; transition: background .15s; position: relative; }
 .calcell:hover { background: rgba(0,255,194,.05); }
 .calcell.today { background: rgba(0,255,194,.025); }
 .caltime { font-family: 'Geist', monospace; font-size: 10px; color: rgba(255,255,255,.35); text-align: right; padding: 6px 8px 0 0; border-bottom: 1px solid rgba(255,255,255,.04); }
@@ -910,7 +910,7 @@ function renderComposeCal() {
   const fmt = d => d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
   document.getElementById('cmp-cal-title').textContent = fmt(days[0]) + ' – ' + fmt(days[6]);
   const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const hours = [9,11,13,15,17];
+  const hours = Array.from({ length: 13 }, (_, i) => i + 8);   // 08:00 → 20:00, hour by hour
   const pickedISO = getSchedDate();
   const pickedTime = document.getElementById('cmp-time').value;
   let html = '<div style="display:grid;grid-template-columns:34px repeat(7,1fr);border:1px solid var(--border);border-radius:8px;overflow:hidden;">';
@@ -1014,7 +1014,7 @@ function renderCalendar() {
   const fmt = d => d.toLocaleDateString('en-US',{ month:'short', day:'numeric' });
   document.getElementById('cal-title').textContent = fmt(days[0]) + ' – ' + fmt(days[6]);
   const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const hours = [9,11,13,15,17];
+  const hours = Array.from({ length: 13 }, (_, i) => i + 8);   // 08:00 → 20:00, hour by hour
   let html = '<div class="calgrid">';
   html += '<div class="calhead"></div>';
   days.forEach((d,i) => {
@@ -1025,7 +1025,7 @@ function renderCalendar() {
     html += `<div class="caltime">${String(h).padStart(2,'0')}:00</div>`;
     days.forEach(d => {
       const cellStart = new Date(d); cellStart.setHours(h,0,0,0);
-      const cellEnd = new Date(d); cellEnd.setHours(h+2,0,0,0);
+      const cellEnd = new Date(d); cellEnd.setHours(h+1,0,0,0);
       const isToday = d.getTime() === today.getTime();
       const inCell = posts.filter(p => p.scheduledAt && (p.status==='scheduled'||p.status==='published') && (()=>{ const t=new Date(p.scheduledAt); return t>=cellStart && t<cellEnd; })());
       let chips = '';
