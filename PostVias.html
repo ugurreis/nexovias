@@ -90,7 +90,9 @@ select.inp { appearance: none; cursor: pointer; }
 .stat .delta { font-size: 12px; font-weight: 600; margin-top: 6px; }
 
 /* Platform chip */
-.pchip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,.03); cursor: pointer; transition: all .2s; font-size: 13px; font-weight: 600; user-select: none; }
+.pchip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,.03); color: var(--text); cursor: pointer; transition: all .2s; font-size: 13px; font-weight: 600; font-family: 'Hanken Grotesk', sans-serif; user-select: none; }
+@keyframes pv-spin { to { transform: rotate(360deg); } }
+.pv-spin { display: inline-block; animation: pv-spin .8s linear infinite; }
 .pchip:hover { border-color: rgba(255,255,255,.2); }
 .pchip.sel { border-color: var(--primary); background: rgba(0,255,194,.1); color: var(--primary); }
 .pchip.off { opacity: .35; cursor: not-allowed; }
@@ -613,16 +615,16 @@ select.inp { appearance: none; cursor: pointer; }
       <h3 style="font-weight:700;font-size:18px;">Connect an account</h3>
       <button class="iconbtn" style="border:none;" onclick="closeConnect()" aria-label="Close"><span class="material-symbols-outlined">close</span></button>
     </div>
-    <p class="muted" style="font-size:13px;margin-bottom:16px;">In the real app this opens a secure login (OAuth). For this demo, just pick a platform and enter a handle.</p>
-    <label class="slabel" style="display:block;margin-bottom:8px;">Platform</label>
+    <p class="muted" style="font-size:13px;margin-bottom:16px;">Connecting is a <strong style="color:#e5e5e5;">one-time secure login</strong>. In the live app you're redirected to the platform to sign in once — after that you can post to it anytime. <span class="mono" style="font-size:11px;">(Demo simulates the login.)</span></p>
+    <label class="slabel" style="display:block;margin-bottom:8px;">Choose a platform</label>
     <div id="connect-platforms" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
     <label class="slabel" style="display:block;margin-bottom:6px;">Display name</label>
     <input id="connect-name" class="inp" placeholder="e.g. Your Brand" style="margin-bottom:14px;"/>
-    <label class="slabel" style="display:block;margin-bottom:6px;">Handle</label>
+    <label class="slabel" style="display:block;margin-bottom:6px;">Handle <span style="color:rgba(255,255,255,.3);text-transform:none;letter-spacing:0;">(the account you'll sign into)</span></label>
     <div style="display:flex;align-items:center;gap:6px;"><span class="muted">@</span><input id="connect-handle" class="inp" placeholder="yourbrand"/></div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;">
       <button class="btn-g" style="padding:10px 18px;" onclick="closeConnect()">Cancel</button>
-      <button class="btn-p" style="padding:10px 18px;" onclick="doConnect()"><span class="material-symbols-outlined" style="font-size:16px;">add_link</span>Connect</button>
+      <button id="connect-go" class="btn-p" style="padding:10px 18px;" onclick="doConnect()"><span class="material-symbols-outlined" style="font-size:16px;">login</span><span id="connect-go-label">Select a platform</span></button>
     </div>
   </div>
 </div>
@@ -639,7 +641,7 @@ const PLATFORMS = [
   { id:'x',         name:'X',         abbr:'X',  color:'#000000', limit:280   },
   { id:'linkedin',  name:'LinkedIn',  abbr:'in', color:'#0a66c2', limit:3000  },
   { id:'instagram', name:'Instagram', abbr:'IG', color:'#e1306c', limit:2200  },
-  { id:'tiktok',    name:'TikTok',    abbr:'TT', color:'#25f4ee', limit:2200  },
+  { id:'tiktok',    name:'TikTok',    abbr:'TT', color:'#010101', limit:2200  },
   { id:'facebook',  name:'Facebook',  abbr:'f',  color:'#1877f2', limit:5000  },
   { id:'youtube',   name:'YouTube',   abbr:'YT', color:'#ff0000', limit:5000  },
   { id:'threads',   name:'Threads',   abbr:'@',  color:'#777777', limit:500   },
@@ -1510,14 +1512,25 @@ function renderAccounts() {
 
 // ── connect / disconnect accounts ─────────────────────────
 let connectPlatform = null;
+let connecting = false;
+function updateConnectBtn() {
+  const label = document.getElementById('connect-go-label');
+  if (label) label.textContent = connectPlatform ? ('Continue with ' + pById(connectPlatform).name) : 'Select a platform';
+}
 function openConnect(preset) {
   connectPlatform = preset || null;
   if (accounts.length >= planLimit()) {
     toast('Account limit reached on your ' + (PLAN_NAMES[settings.plan] || 'Creator') + ' plan — upgrade for more', true);
     switchTab('pricing'); return;
   }
-  document.getElementById('connect-name').value = '';
-  document.getElementById('connect-handle').value = '';
+  connecting = false;
+  // prefill from brand (as if the platform returned your account on sign-in)
+  document.getElementById('connect-name').value = settings.brand || '';
+  document.getElementById('connect-handle').value = settings.handle || '';
+  // reset the login button (it may hold a spinner from a previous run)
+  const btn = document.getElementById('connect-go');
+  btn.disabled = false;
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">login</span><span id="connect-go-label">Select a platform</span>';
   const box = document.getElementById('connect-platforms');
   box.innerHTML = '';
   PLATFORMS.forEach(p => {
@@ -1525,27 +1538,38 @@ function openConnect(preset) {
     chip.type = 'button';
     chip.className = 'pchip' + (connectPlatform === p.id ? ' sel' : '');
     chip.innerHTML = `<span class="pi" style="background:${p.color}">${esc(p.abbr)}</span>${esc(p.name)}`;
-    chip.onclick = () => { connectPlatform = p.id; [...box.children].forEach(c => c.classList.remove('sel')); chip.classList.add('sel'); };
+    chip.onclick = () => { if (connecting) return; connectPlatform = p.id; [...box.children].forEach(c => c.classList.remove('sel')); chip.classList.add('sel'); updateConnectBtn(); };
     box.appendChild(chip);
   });
+  updateConnectBtn();
   lastFocus = document.activeElement;
   const modal = document.getElementById('connect-modal');
   modal.classList.add('open');
   if (window.PVanim) window.PVanim.modalIn(modal.querySelector('.modal'));
   setTimeout(() => document.getElementById('connect-name').focus(), 0);
 }
-function closeConnect() { document.getElementById('connect-modal').classList.remove('open'); restoreFocus(); }
+function closeConnect() { if (connecting) return; document.getElementById('connect-modal').classList.remove('open'); restoreFocus(); }
 function doConnect() {
+  if (connecting) return;
   if (!connectPlatform) { toast('Pick a platform first', true); return; }
   if (accounts.length >= planLimit()) { toast('Account limit reached — upgrade your plan', true); switchTab('pricing'); return; }
   const handle = document.getElementById('connect-handle').value.trim().replace(/^@/, '');
   const name = document.getElementById('connect-name').value.trim();
-  if (!handle) { toast('Enter a handle', true); return; }
-  accounts.push({ id: uid(), platform: connectPlatform, handle, name: name || handle });
-  save(); renderStats();
-  closeConnect();
-  switchTab('accounts');
-  toast(pById(connectPlatform).name + ' account @' + handle + ' connected');
+  if (!handle) { toast('Enter a handle to sign in with', true); return; }
+  const pl = pById(connectPlatform);
+  // Simulate the one-time OAuth sign-in (real app redirects to the platform).
+  connecting = true;
+  const btn = document.getElementById('connect-go');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="material-symbols-outlined pv-spin" style="font-size:16px;">progress_activity</span><span>Signing in to ${esc(pl.name)}…</span>`;
+  setTimeout(() => {
+    accounts.push({ id: uid(), platform: connectPlatform, handle, name: name || handle });
+    save(); renderStats();
+    connecting = false;
+    closeConnect();
+    switchTab('accounts');
+    toast('Signed in — ' + pl.name + ' @' + handle + ' connected');
+  }, 1200);
 }
 function disconnectAccount(id) {
   const a = accounts.find(x => x.id === id); if (!a) return;
