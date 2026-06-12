@@ -1,19 +1,5 @@
 [build]
   publish = "."
-  # Netlify installs deps from package.json automatically (npm).
-
-[build.environment]
-  NODE_VERSION = "20"
-
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-
-# Friendlier path: /api/* -> /.netlify/functions/*
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
 
 [[headers]]
   for = "/*"
